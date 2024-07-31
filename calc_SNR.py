@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 import numpy as np
 import rawpy
 from PIL import Image
@@ -7,7 +8,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def calc_SNR(img: np.array, center: (int, int), radius: int) -> float:
+def calc_SNR(img: np.array, center: Tuple[int, int], radius: int) -> float:
     """
     Calculate the Signal-to-Noise Ratio (SNR) of an image.
 
