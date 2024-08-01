@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from tqdm import tqdm
 
-from helpers import plot_cut
+from plot.plot_cut import plot_cut
 
 
 done = False
