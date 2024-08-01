@@ -53,7 +53,7 @@ def calc_SNR(img: np.array, center: Tuple[int, int], radius: int) -> float:
     return snr, signal, std, std_bg, mean_bg
 
 
-# calculating average metrics for single captures
+# calculating average metrics for a folder of single captures
 path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Xiaomi/iso12800expo30_8DC_native_camera"
 output_path = "NREA/metrics/metrics_single_captures_avg.txt"
 center = (1577, 2069)
@@ -81,7 +81,7 @@ std = np.mean(std_values)
 std_bg = np.mean(std_bg_values)
 mean_bg = np.mean(mean_bg_values)
 
-# calculating metrics for NREA output
+# calculating metrics single capture
 # setting = "ca_r5"
 # output_path = "NREA/metrics/metrics_" + setting + ".txt"
 # path = "NREA/images/nrea_with_" + setting + ".tiff"
