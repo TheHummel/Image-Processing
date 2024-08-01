@@ -4,12 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
+from tqdm import tqdm
 
 def image_stacking(path_dir: str):
     # LOAD IMAGES
     images = []
 
-    for filename in os.listdir(path_dir):
+    for filename in tqdm(os.listdir(path_dir)):
         if filename.endswith(".dng"):
             with rawpy.imread(os.path.join(path_dir, filename)) as raw:
                 image = raw.postprocess()
@@ -21,7 +22,7 @@ def image_stacking(path_dir: str):
     return mean_image
 
 
-path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Xiaomi/iso12800expo30_8DC_native_camera"
+path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Xiaomi/iso3200_expo30_9DC_native_camera"
 mean_image = image_stacking(path)
 
 # Normalize the mean image to 0-255 and convert to uint8
