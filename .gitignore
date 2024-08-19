@@ -6,3 +6,5 @@
 *.jpeg
 
 *.txt
+
+*.pyc
