@@ -1,0 +1,178 @@
+import os
+import pandas as pd
+import re
+import csv
+import rawpy
+
+import matplotlib.pyplot as plt
+
+from tqdm import tqdm
+
+
+def load_dngs_from_folder(folder: str) -> list:
+    """Loads all dng files from a folder and returns them as a list.
+
+    Args:
+      folder: Path to the folder containing dng files.
+
+    Returns:
+      List of loaded dng files.
+    """
+
+    images = []
+    for filename in tqdm(os.listdir(folder), desc="Loading images"):
+        if filename.endswith(".dng"):
+            with rawpy.imread(os.path.join(folder, filename)) as raw:
+                image = raw.postprocess()
+                images.append(image)
+
+    return images
+
+
+def load_tiffs_from_folder(folder: str) -> list:
+    """Loads all tiff files from a folder and returns them as a list.
+
+    Args:
+      folder: Path to the folder containing tiff files.
+
+    Returns:
+      List of loaded tiff files.
+    """
+
+    images = []
+    for filename in tqdm(os.listdir(folder), desc="Loading images"):
+        if filename.endswith(".tiff"):
+            image = plt.imread(os.path.join(folder, filename))
+            images.append(image)
+
+    return images
+
+
+def convert_txt_to_csv(txt_file: str, csv_file: str) -> None:
+    """Converts a txt file with the given format to a csv file.
+
+    Args:
+      txt_file: Path to the input txt file.
+      csv_file: Path to the output csv file.
+    """
+
+    data = []
+    with open(txt_file, "r") as f:
+        for line in f:
+            key, value = line.strip().split(": ")
+            data.append([key, float(value)])
+
+    df = pd.DataFrame(data, columns=["Parameter", "Value"])
+    df = df.set_index("Parameter").T
+    df.to_csv(csv_file, index=False)
+
+
+def convert_metrics_summary_to_csv(txt_file: str, csv_file: str) -> None:
+    """Extracts mean and std from metrics summary & converts to a csv file.
+
+    Args:
+      txt_file: Path to the input txt file.
+      csv_file: Path to the output csv file.
+    """
+
+    data = {}
+    with open(txt_file, "r") as f:
+        for line in f:
+            match = re.match(r"(.*): (\d+\.\d+) \+/- (\d+\.\d+)", line.strip())
+            if match:
+                key, value, std = match.groups()
+                data[key.strip()] = [float(value), float(std)]
+
+    df = pd.DataFrame(data)
+    df.to_csv(csv_file, index=False)
+
+
+def convert_powermeter_output_to_csv(
+    input_file_path: str, output_file_path: str
+) -> None:
+    data = []
+
+    # Read the input file and extract the data
+    with open(input_file_path, "r") as file:
+        lines = file.readlines()
+        # Skip the header lines (first two lines)
+        for line in lines[2:]:
+            parts = line.split()
+            if len(parts) == 4:
+                date = parts[0]
+                time = parts[1]
+                value = parts[2]
+                unit = parts[3]
+                # Append the extracted data to the list
+                data.append([date, time, value, unit])
+
+    # Write the extracted data to a CSV file
+    with open(output_file_path, "w", newline="") as file:
+        writer = csv.writer(file)
+        # Write the header row
+        writer.writerow(["Date", "Time", "Value", "Unit"])
+        # Write the data rows
+        writer.writerows(data)
+
+
+def get_df_from_csv_folder(folder: str) -> pd.DataFrame:
+    """Reads all csv files in a folder and returns a DataFrame.
+
+    Args:
+      folder: Path to the folder containing csv files.
+
+    Returns:
+      DataFrame containing the data from all csv files in the folder.
+    """
+
+    dfs = []
+    for file in tqdm(os.listdir(folder)):
+        if file.endswith(".csv"):
+            csv_file = os.path.join(folder, file)
+            df = pd.read_csv(csv_file)
+            dfs.append(df)
+
+    return pd.concat(dfs, ignore_index=True)
+
+
+def extract_values_from_SNR_outputs(file_path: str) -> tuple:
+    snr = None
+    signal = None
+    mean_background = None
+
+    with open(file_path, "r") as file:
+        for line in file:
+            if line.startswith("SNR:"):
+                snr = float(line.split(":")[1].strip())
+            elif line.startswith("Signal:"):
+                signal = float(line.split(":")[1].strip())
+            elif line.startswith("Mean (Background):"):
+                mean_background = float(line.split(":")[1].strip())
+
+    return snr, signal, mean_background
+
+
+# # convert folder of txt files to csv files
+# txt_folder = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/iso3200expo30_8DC/SNR_outputs"
+# output_folder = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/iso3200expo30_8DC/SNR_outputs_csv"
+
+# os.makedirs(output_folder, exist_ok=True)
+# for file in tqdm(os.listdir(txt_folder)):
+#     if file.endswith(".txt") and "summary" not in file:
+#         txt_file = os.path.join(txt_folder, file)
+#         csv_file = os.path.join(output_folder, file.replace(".txt", ".csv"))
+#         convert_txt_to_csv(txt_file, csv_file)
+
+
+# print(get_df_from_csv_folder(output_folder))
+
+
+# # convert powermeter output to csv
+# filename = "PM100_04-Aug-24_17-46_BLANK.txt"
+# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Thorlabs/" + filename
+# output_path = (
+#     "C:/Users/janni/Desktop/ETH/BT/Messungen/Thorlabs/"
+#     + "/"
+#     + filename.replace(".txt", ".csv")
+# )
+# convert_powermeter_output_to_csv(path, output_path)
