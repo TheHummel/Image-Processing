@@ -32,7 +32,7 @@ def calc_SNR(img: np.array, center: Tuple[int, int], radius: int) -> float:
     # TODO: use small square inside circle to calculate signal
 
     diameter = 2 * radius
-    square_top_left_y = center[1] + radius + 100
+    square_top_left_y = center[1] + radius + 300
     square_top_left_x = center[0] - radius
     square_mask = np.zeros_like(img, dtype=bool)
     square_mask[
@@ -46,11 +46,12 @@ def calc_SNR(img: np.array, center: Tuple[int, int], radius: int) -> float:
 
     std = np.std(img)
     std_bg = np.std(bg_square)
-    mean_bg = np.mean(bg_square)
 
-    snr = signal / mean_bg
+    noise = np.mean(bg_square)
 
-    return snr, signal, std, std_bg, mean_bg
+    snr = signal / noise
+
+    return snr, signal, noise  # , std, std_bg
 
 
 def save_metrics(
@@ -68,6 +69,7 @@ def save_metrics(
     print(f"Mean (Background): {mean_bg}")
 
     # save results to txt file
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
         f.write(f"SNR: {SNR}\n")
         f.write(f"Signal: {signal}\n")
@@ -76,17 +78,33 @@ def save_metrics(
         f.write(f"Mean (Background): {mean_bg}\n")
 
 
-# calculating AVERAGE metrics for a folder of single captures
+def save_metrics_csv(
+    SNR: float,
+    signal: float,
+    noise: float,
+    output_path: str,
+) -> None:
+    # save results to csv file
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w") as f:
+        f.write("SNR, Signal, Noise\n")
+        f.write(f"{SNR}, {signal}, {noise}\n")
+
+
+# # calculating AVERAGE metrics for a folder of single captures
 # path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Xiaomi/iso12800expo30_8DC_native_camera"
-# output_path = "NREA/metrics/metrics_single_captures_avg.txt"
+# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P20/lowest/8D/images"
+# output_path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P20/lowest/8D/metrics_single_captures_avg.txt"
 # center = (1577, 2069)
-# radius = 102
+# center = (1440, 2040)  # Huawei P20
+# radius = 80
 
 # snr_values = []
 # signal_values = []
 # std_values = []
 # std_bg_values = []
 # mean_bg_values = []
+# print("Loading images...")
 # for filename in tqdm(os.listdir(path)):
 #     if filename.endswith(".dng"):
 #         with rawpy.imread(path + "/" + filename) as raw:
@@ -106,62 +124,105 @@ def save_metrics(
 
 # save_metrics(SNR, signal, std, std_bg, mean_bg, output_path)
 
-# calculating metrics for a folder of single captures
-path = "C:/Users/janni/Desktop/ETH/BT/Messungen/compare_native_to_custom/Huawei P20 Pro/custom/iso3200expo30"
-output_path = "C:/Users/janni/Desktop/ETH/BT/Messungen/compare_native_to_custom/Huawei P20 Pro/custom_metrics/iso3200expo30"
+# # calculating metrics for a folder of single captures
+# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/final/12D"
+# output_path = (
+#     "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/final/12D/SNR_outputs"
+# )
 
-center = (1442, 1975)
-radius = 114
+# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Xiaomi/final/iso3200expo30/17D/NREA"
+# output_path = path + "/SNR_outputs"
 
-SNR_values = []
-signal_values = []
-std_values = []
-std_bg_values = []
-mean_bg_values = []
-for filename in tqdm(os.listdir(path)):
-    if filename.endswith(".dng"):
-        with rawpy.imread(path + "/" + filename) as raw:
-            image = raw.postprocess()
-            image = np.rot90(image, 3)
-            snr, signal, std, std_bg, mean_bg = calc_SNR(image, center, radius)
-            save_metrics(
-                snr, signal, std, std_bg, mean_bg, output_path + "/" + filename + ".txt"
-            )
+# center = (1440, 2070)
+# center = (1410, 2050)  # Huawei P60 Pro 9D
+# # center = (1450, 1080)  # Huawei P60 Pro 8DC
+# center = (1540, 2070)  # Xiaomi 13 Pro
+# radius = 80
 
-            SNR_values.append(snr)
-            signal_values.append(signal)
-            std_values.append(std)
-            std_bg_values.append(std_bg)
-            mean_bg_values.append(mean_bg)
+# SNR_values = []
+# signal_values = []
+# std_values = []
+# std_bg_values = []
+# mean_bg_values = []
+# for filename in tqdm(os.listdir(path)):
+#     if filename.endswith(".dng"):
+#         with rawpy.imread(path + "/" + filename) as raw:
+#             image = raw.postprocess()
+#             # image = np.rot90(image, 3)
+#             snr, signal, std, std_bg, mean_bg = calc_SNR(image, center, radius)
+#             save_metrics(
+#                 snr, signal, std, std_bg, mean_bg, output_path + "/" + filename + ".txt"
+#             )
 
-SNR = np.mean(SNR_values)
-SNR_std = np.std(SNR_values)
-signal = np.mean(signal_values)
-signal_std = np.std(signal_values)
-std = np.mean(std_values)
-std_std = np.std(std_values)
-std_bg = np.mean(std_bg_values)
-std_bg_std = np.std(std_bg_values)
-mean_bg = np.mean(mean_bg_values)
-mean_bg_std = np.std(mean_bg_values)
+#             SNR_values.append(snr)
+#             signal_values.append(signal)
+#             std_values.append(std)
+#             std_bg_values.append(std_bg)
+#             mean_bg_values.append(mean_bg)
 
-os.makedirs(output_path, exist_ok=True)
+#     elif filename.endswith(".tiff"):
+#         image = Image.open(path + "/" + filename)
+#         image = np.array(image)
+#         snr, signal, std, std_bg, mean_bg = calc_SNR(image, center, radius)
+#         save_metrics(
+#             snr, signal, std, std_bg, mean_bg, output_path + "/" + filename + ".txt"
+#         )
 
-with open(output_path + "/metrics_summary.txt", "w") as f:
-    f.write(f"SNR: {SNR} +/- {SNR_std}\n")
-    f.write(f"Signal: {signal} +/- {signal_std}\n")
-    f.write(f"Standard Deviation: {std} +/- {std_std}\n")
-    f.write(f"Standard Deviation (Background): {std_bg} +/- {std_bg_std}\n")
-    f.write(f"Mean (Background): {mean_bg} +/- {mean_bg_std}\n")
+#         SNR_values.append(snr)
+#         signal_values.append(signal)
+#         std_values.append(std)
+#         std_bg_values.append(std_bg)
+#         mean_bg_values.append(mean_bg)
 
 
-# calculating metrics single capture
+# # SNR = np.mean(SNR_values)
+# # SNR_std = np.std(SNR_values)
+# # signal = np.mean(signal_values)
+# # signal_std = np.std(signal_values)
+# # std = np.mean(std_values)
+# # std_std = np.std(std_values)
+# # std_bg = np.mean(std_bg_values)
+# # std_bg_std = np.std(std_bg_values)
+# # mean_bg = np.mean(mean_bg_values)
+# # mean_bg_std = np.std(mean_bg_values)
+
+# # os.makedirs(output_path, exist_ok=True)
+
+# # with open(output_path + "/metrics_summary.txt", "w") as f:
+# #     f.write(f"SNR: {SNR} +/- {SNR_std}\n")
+# #     f.write(f"Signal: {signal} +/- {signal_std}\n")
+# #     f.write(f"Standard Deviation: {std} +/- {std_std}\n")
+# #     f.write(f"Standard Deviation (Background): {std_bg} +/- {std_bg_std}\n")
+# #     f.write(f"Mean (Background): {mean_bg} +/- {mean_bg_std}\n")
+
+
+# # # calculating metrics single capture (tiff)
 # setting = "ca_r5"
 # output_path = "NREA/metrics/metrics_" + setting + ".txt"
 # path = "NREA/images/nrea_with_" + setting + ".tiff"
+# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/final/9D/images/image_stacking/mean_image.tiff"
+# output_path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/final/9D/images/image_stacking/metrics.txt"
 # image = Image.open(path)
 # image = np.array(image)
 
-# SNR, signal, std, std_bg, mean_bg = calc_SNR(image, (1577, 2069), 102)
+# center = (1400, 2060)
+# center = (1440, 2040)  # Huawei P20
+# radius = 80
+# SNR, signal, std, std_bg, mean_bg = calc_SNR(image, center, radius)
 
 # save_metrics(SNR, signal, std, std_bg, mean_bg, output_path)
+
+# # calclulating metrics for single capture (dng)
+# path = "images/test.dng"
+# output_path = "metrics/test.txt"
+
+# os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+# center = (1440, 2060)  # Huawei P60 Pro
+# center = (1440, 2040)  # Huawei P20
+# radius = 80
+
+# with rawpy.imread(path) as raw:
+#     image = raw.postprocess()
+#     SNR, signal, std, std_bg, mean_bg = calc_SNR(image, center, radius)
+#     save_metrics(SNR, signal, std, std_bg, mean_bg, output_path)
