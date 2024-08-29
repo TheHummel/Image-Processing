@@ -8,50 +8,79 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-def calc_SNR(img: np.array, center: Tuple[int, int], radius: int) -> float:
+def calc_SNR(
+    img: np.ndarray,
+    center: Tuple[int, int],
+    radius: int,
+    offset_background: int = None,
+    show_sample_position: bool = False,
+) -> float:
     """
     Calculate the Signal-to-Noise Ratio (SNR) of an image.
 
     Parameters:
-    img (np.array): The input image.
+    img (np.ndarray): The input image.
     center ((int, int)): The center of the circular region of interest.
     radius (int): The radius of the circular region of interest.
+    show_sample_position (bool): Whether to show position from where the signal and noise are sampled.
 
     Returns:
     float: The Signal-to-Noise Ratio (SNR) of the image.
     """
-    # Extract the circular region of interest
+    # circular region of interest (ROI) for signal
     y, x = np.ogrid[: img.shape[0], : img.shape[1]]
-    mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius**2
-    circle = img[mask]
-
-    # plt.imshow(mask)
-    # plt.show()
+    circle_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius**2
+    circle = img[circle_mask]
 
     signal = np.mean(circle)
-    # TODO: use small square inside circle to calculate signal
 
-    diameter = 2 * radius
-    square_top_left_y = center[1] + radius + 300
-    square_top_left_x = center[0] - radius
-    square_mask = np.zeros_like(img, dtype=bool)
-    square_mask[
-        square_top_left_y : square_top_left_y + diameter,
-        square_top_left_x : square_top_left_x + diameter,
-    ] = True
-    bg_square = img[square_mask]
+    # # square region for noise
+    # diameter = 2 * radius
+    # square_top_left_y = center[1] + radius - 350
+    # square_top_left_x = center[0] - radius
+    # square_mask = np.zeros_like(img, dtype=bool)
+    # square_mask[
+    #     square_top_left_y : square_top_left_y + diameter,
+    #     square_top_left_x : square_top_left_x + diameter,
+    # ] = True
+    # bg_square = img[square_mask]
 
-    # plt.imshow(square_mask)
-    # plt.show()
+    # # noise region = inverse of circle + buffer
+    offset_background = radius if offset_background is None else offset_background
+    y, x = np.ogrid[: img.shape[0], : img.shape[1]]
+    bg_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= (
+        radius + offset_background
+    ) ** 2
+    bg_mask = ~bg_mask
+    bg = img[bg_mask]
 
-    std = np.std(img)
-    std_bg = np.std(bg_square)
+    if show_sample_position:
+        circle_mask = circle_mask.astype(np.float32)
+        # square_mask = square_mask.astype(np.float32)
+        bg_mask = bg_mask.astype(np.float32)
+        plt.imshow(img)
+        plt.imshow(
+            np.dstack(
+                (np.zeros_like(circle_mask), circle_mask, np.zeros_like(circle_mask))
+            ),
+            alpha=0.3,
+            cmap="Greens",
+        )
+        plt.imshow(
+            np.dstack((bg_mask, np.zeros_like(bg_mask), np.zeros_like(bg_mask))),
+            alpha=0.3,
+            cmap="Reds",
+        )
+        plt.show()
 
-    noise = np.mean(bg_square)
+    noise = np.mean(bg)
+
+    std_signal = np.std(circle)
+    std_noise = np.std(bg)
 
     snr = signal / noise
 
-    return snr, signal, noise  # , std, std_bg
+    return snr, signal, noise  # , std_signal, std_noise
 
 
 def save_metrics(
