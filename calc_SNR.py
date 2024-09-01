@@ -32,8 +32,6 @@ def calc_SNR(
     circle_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius**2
     circle = img[circle_mask]
 
-    signal = np.mean(circle)
-
     # # square region for noise
     # diameter = 2 * radius
     # square_top_left_y = center[1] + radius - 350
@@ -73,10 +71,12 @@ def calc_SNR(
         )
         plt.show()
 
-    noise = np.mean(bg)
+    mean_roi = np.mean(circle)
+    mean_bg = np.mean(bg)
 
-    std_signal = np.std(circle)
-    std_noise = np.std(bg)
+    signal = mean_roi - mean_bg
+
+    noise = np.std(img)
 
     snr = signal / noise
 
@@ -116,7 +116,7 @@ def save_metrics_csv(
     # save results to csv file
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
-        f.write("SNR, Signal, Noise\n")
+        f.write("SNR,Signal,Noise\n")
         f.write(f"{SNR}, {signal}, {noise}\n")
 
 
