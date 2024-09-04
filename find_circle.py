@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import rawpy
 
 # LOAD THE IMAGE
-image_path = "images/7D.dng"
+image_path = ""
 
 # image = cv2.imread(image_path)
 

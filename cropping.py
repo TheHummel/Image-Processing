@@ -1,20 +1,35 @@
 import os
-import rawpy
 from PIL import Image
+from tqdm import tqdm
+import click
 
-input_dir = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P20/lowest/8D_final/images"
+from helpers.helpers import load_images_from_folder, load_dngs_from_folder
+from helpers.CLI_options import input_dir_option, is_raw_option, crop_factor_option
 
-output_path = input_dir + "/cropped"
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
 
-for filename in os.listdir(input_dir):
-    if filename.endswith(".dng"):
-        with rawpy.imread(input_dir + "/" + filename) as raw:
-            image = raw.postprocess()
-            square_size = int(image.shape[1] / 2)
-            start_x = image.shape[1] // 2 - square_size // 2
-            start_y = image.shape[0] // 2 - square_size // 2
-            image = image[start_y : start_y + square_size, start_x : start_x + square_size]
-            im = Image.fromarray(image)
-            im.save(output_path + "/" + filename.replace(".dng", ".tiff"))
+@click.command()
+@input_dir_option
+@is_raw_option
+@crop_factor_option
+def crop(input_dir: str, is_raw: bool, crop_factor: int):
+    output_path = input_dir + "/cropped" + str(crop_factor)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    if is_raw:
+        images = load_dngs_from_folder(input_dir)
+    else:
+        images = load_images_from_folder(input_dir)
+
+    for i, image in tqdm(enumerate(images), desc="Cropping images", total=len(images)):
+        square_size = int(min(image.shape[0], image.shape[1]) / crop_factor)
+        start_x = image.shape[1] // 2 - square_size // 2
+        start_y = image.shape[0] // 2 - square_size // 2
+        image = image[start_y : start_y + square_size, start_x : start_x + square_size]
+        im = Image.fromarray(image)
+
+        im.save(output_path + f"/cropped_{i + 1}.tiff")
+
+
+if __name__ == "__main__":
+    crop()

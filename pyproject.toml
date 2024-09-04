@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "image processing"
+version = "0.1.0"
+description = "Image processing code for BT"
+authors = ["jannisalsbach <jannisalsbach@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^2.1.1"
+pandas = "^2.2.2"
+click = "^8.1.7"
+matplotlib = "^3.9.2"
+rawpy = "^0.22.0"
+pillow = "^10.4.0"
+pyserial = "^3.5"
+opencv-python = "^4.10.0.84"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
