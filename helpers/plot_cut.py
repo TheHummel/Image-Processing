@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_cut(image: np.array, axis: int = 0, coord: int = 0, show: bool = True):
+def plot_cut(image: np.ndarray, axis: int = 0, coord: int = 0, show: bool = True):
     """
     Plot a cut of the image along the specified axis.
 
     Parameters:
-    image (np.array): The input image.
+    image (np.ndarray): The input image.
     axis (int): The axis along which to plot the cut. 0 means cutting along x-axis, 1 means cutting along y-axis.
     coord (int): The coordinate along the specified axis at which to plot the cut.
     """

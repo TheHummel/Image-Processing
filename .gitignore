@@ -8,3 +8,7 @@
 *.txt
 
 *.pyc
+
+*vscode
+
+archive/

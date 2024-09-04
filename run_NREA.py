@@ -1,0 +1,127 @@
+import os
+from PIL import Image
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import click
+
+from denoising.NREA import NREA
+from metrics.SNR_metrics import calc_SNR
+from helpers.helpers import (
+    load_images_from_folder,
+    load_dngs_from_folder,
+)
+from helpers.CLI_options import (
+    input_dir_option,
+    is_raw_option,
+    center_x_option,
+    center_y_option,
+    radius_option,
+    kernel_option,
+    kernel_size_option,
+)
+
+colormap = cm.get_cmap("tab10")
+
+
+@click.command()
+@input_dir_option
+@is_raw_option
+@center_x_option
+@center_y_option
+@radius_option
+@kernel_option
+@kernel_size_option
+def run_NREA(
+    input_dir: str,
+    is_raw: bool,
+    center_x: int,
+    center_y: int,
+    radius: int,
+    kernel: str,
+    kernel_size: int,
+):
+    # LOAD IMAGES
+    center = (center_x, center_y)
+    print(center)
+    print(type(center))
+    if is_raw:
+        images = load_dngs_from_folder(input_dir)
+    else:
+        images = load_images_from_folder(input_dir)
+
+    output_dir = input_dir + "/NREA_epochs"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    n = len(images)
+    metrics = np.zeros((n, 3))
+
+    for i in range(n):
+        # do NREA with i images
+        nrea = NREA(
+            images[: i + 1],
+            gaussian_blurring=(kernel == "GB"),
+            kernel_radius=kernel_size,
+        )
+
+        # save as tiff
+        output_path = os.path.join(output_dir, f"nrea_r{kernel_size}_{i + 1}.tiff")
+        im = Image.fromarray(nrea)
+        im.save(output_path)
+
+        # calculate SNR
+        snr, signal, noise = calc_SNR(
+            nrea, center, radius=radius, show_sample_position=False
+        )
+
+        metrics[i] = [snr, signal, noise]
+
+    # save metrics
+    df_metrics = pd.DataFrame(
+        metrics, columns=["SNR", "Signal", "Noise"], index=range(1, n + 1)
+    )
+    df_metrics.index.name = "#epochs"
+    df_metrics.to_csv(os.path.join(output_dir, f"metrics_{kernel_size}.csv"))
+
+    # plot metrics
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plot SNR on the primary y-axis
+    ax1.plot(range(1, n + 1), metrics[:, 0], marker="", color=colormap(0), label="SNR")
+    ax1.set_xlabel("#images", fontsize=18)
+    ax1.set_ylabel("SNR", fontsize=18)
+    ax1.tick_params(axis="y")
+
+    ax1.set_ylim(bottom=0)
+
+    # Create a secondary y-axis for Signal and Noise
+    ax2 = ax1.twinx()
+    ax2.plot(
+        range(1, n + 1), metrics[:, 1], marker="", color=colormap(2), label="Signal"
+    )
+    ax2.plot(
+        range(1, n + 1), metrics[:, 2], marker="", color=colormap(3), label="Noise"
+    )
+    ax2.set_ylabel("Signal, Noise", fontsize=18)
+    ax2.tick_params(axis="y")
+
+    # Combine legends from both axes
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="center left")
+
+    output_path = os.path.join(output_dir, f"metrics_{kernel_size}.png")
+    plt.savefig(output_path)
+
+    # output_path = os.path.join(output_dir, f"metrics_{kernel_radius}.pgf")
+    # plt.savefig(output_path)
+
+    plt.show()
+
+    plt.close()
+
+
+if __name__ == "__main__":
+    run_NREA()

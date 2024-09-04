@@ -22,6 +22,8 @@ def load_images_from_folder(folder: str, only_format: str = None) -> list:
       List of loaded images.
     """
 
+    folder = normalize_path(folder)
+
     images = []
     supported_formats = Image.registered_extensions().keys()
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
@@ -34,6 +36,8 @@ def load_images_from_folder(folder: str, only_format: str = None) -> list:
                 print("Error: Image not loaded correctly")
             image = np.array(image)
             images.append(image)
+
+    print(f"Loaded {len(images)} images from {folder}")
 
     return images
 
@@ -48,6 +52,8 @@ def load_dngs_from_folder(folder: str) -> list:
       List of loaded dng files.
     """
 
+    folder = normalize_path(folder)
+
     images = []
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
         if filename.endswith(".dng"):
@@ -55,7 +61,17 @@ def load_dngs_from_folder(folder: str) -> list:
                 image = raw.postprocess()
                 images.append(image)
 
+    print(f"Loaded {len(images)} images from {folder}")
+
     return images
+
+
+def load_dng(path: str) -> np.ndarray:
+    path = normalize_path(path)
+    with rawpy.imread(path) as raw:
+        image = raw.postprocess()
+
+    return image
 
 
 def load_tiffs_from_folder(folder: str) -> list:
@@ -68,6 +84,8 @@ def load_tiffs_from_folder(folder: str) -> list:
       List of loaded tiff files.
     """
 
+    folder = normalize_path(folder)
+
     images = []
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
         if filename.endswith(".tiff"):
@@ -75,6 +93,10 @@ def load_tiffs_from_folder(folder: str) -> list:
             images.append(image)
 
     return images
+
+
+def normalize_path(path: str) -> str:
+    return path.replace("\\", "/")
 
 
 def convert_txt_to_csv(txt_file: str, csv_file: str) -> None:
@@ -179,29 +201,3 @@ def extract_values_from_SNR_outputs(file_path: str) -> tuple:
                 mean_background = float(line.split(":")[1].strip())
 
     return snr, signal, mean_background
-
-
-# # convert folder of txt files to csv files
-# txt_folder = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/iso3200expo30_8DC/SNR_outputs"
-# output_folder = "C:/Users/janni/Desktop/ETH/BT/Messungen/Huawei P60 Pro/iso3200expo30_8DC/SNR_outputs_csv"
-
-# os.makedirs(output_folder, exist_ok=True)
-# for file in tqdm(os.listdir(txt_folder)):
-#     if file.endswith(".txt") and "summary" not in file:
-#         txt_file = os.path.join(txt_folder, file)
-#         csv_file = os.path.join(output_folder, file.replace(".txt", ".csv"))
-#         convert_txt_to_csv(txt_file, csv_file)
-
-
-# print(get_df_from_csv_folder(output_folder))
-
-
-# # convert powermeter output to csv
-# filename = "PM100_04-Aug-24_17-46_BLANK.txt"
-# path = "C:/Users/janni/Desktop/ETH/BT/Messungen/Thorlabs/" + filename
-# output_path = (
-#     "C:/Users/janni/Desktop/ETH/BT/Messungen/Thorlabs/"
-#     + "/"
-#     + filename.replace(".txt", ".csv")
-# )
-# convert_powermeter_output_to_csv(path, output_path)
