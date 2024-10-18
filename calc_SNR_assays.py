@@ -26,7 +26,7 @@ df_result = pd.DataFrame(columns=["filename", "row", "well", "signal", "noise", 
 plot_maske = False
 
 weight = 0.9
-output_dir = input_dir + "/ROF_denoised_" + str(weight).replace(".", "_")
+output_dir = input_dir + "/SNR_metrics" + str(weight).replace(".", "_")
 
 for filename in tqdm(os.listdir(input_dir)):
     if filename.endswith(".dng"):
