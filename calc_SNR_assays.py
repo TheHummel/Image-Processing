@@ -3,14 +3,18 @@ import rawpy
 import numpy as np
 import pandas as pd
 import re
+from PIL import Image
 
 from scipy.ndimage import rotate
 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from helpers.helpers import normalize_path
-
+from helpers.helpers import (
+    normalize_path,
+    load_dngs_from_folder,
+    load_images_from_folder,
+)
 
 input_dir = ""
 input_dir = normalize_path(input_dir)
@@ -25,84 +29,87 @@ df_result = pd.DataFrame(columns=["filename", "row", "well", "signal", "noise", 
 
 plot_maske = False
 
-weight = 0.9
-output_dir = input_dir + "/SNR_metrics" + str(weight).replace(".", "_")
+blue_channel = False
 
-for filename in tqdm(os.listdir(input_dir)):
-    if filename.endswith(".dng"):
-        image_name = filename.split(".")[0]
+output_dir = input_dir + "/SNR_metrics"
 
-        # load image
-        with rawpy.imread(os.path.join(input_dir, filename)) as raw:
-            image = raw.postprocess()
+if is_raw:
+    images, filenames = load_dngs_from_folder(input_dir)
+else:
+    images, filenames = load_images_from_folder(input_dir)
 
-        df_filename = df_data.loc[df_data["filename"] == filename]
+for i, (image, filename) in tqdm(enumerate(zip(images, filenames)), total=len(images)):
+    image_name = filename.split(".")[0]
 
-        # rotate image
-        rotation = re.search(r"\d+", df_filename["orientation"].iloc[0])
-        if rotation:
-            print("Old shape:", image.shape)
-            print("Rotating image by", rotation.group(), "degrees")
-            image = rotate(image, int(rotation.group()), reshape=True)
-            print("New shape:", image.shape)
+    # get blue channel
+    if blue_channel:
+        image = image[:, :, 2]
 
-        if df_filename.empty:
-            print(f"No data found for {filename}")
-            continue
+    df_filename = df_data.loc[df_data["basename"] == image_name]
 
-        # create mask with detected wells and background
-        height = df_filename["height"].iloc[0]
-        width = df_filename["width"].iloc[0]
-        mask = np.zeros((height, width), dtype=bool)
+    # rotate image
+    rotation = re.search(r"\d+", df_filename["orientation"].iloc[0])
+    if rotation:
+        image = rotate(image, int(rotation.group()), reshape=True)
 
-        for index, row in df_filename.iterrows():
-            sensor_size = row["sensor_size"]
-            center_x = row["center_x"]
-            center_y = row["center_y"]
-            center_well = (center_x, center_y)
+    if df_filename.empty:
+        print(f"No data found for {filename}")
+        continue
 
-            y, x = np.ogrid[:height, :width]
-            distance = np.sqrt((x - center_well[0]) ** 2 + (y - center_well[1]) ** 2)
-            mask |= distance <= sensor_size / 2
+    # create mask with detected wells and background
+    height = df_filename["height"].iloc[0]
+    width = df_filename["width"].iloc[0]
+    mask = np.zeros((height, width), dtype=bool)
 
-            signal = np.mean(image[mask])
+    for index, row in df_filename.iterrows():
+        sensor_size = row["sensor_size"]
+        center_x = row["center_x"]
+        center_y = row["center_y"]
+        center_well = (center_x, center_y)
 
-            df_result = pd.concat(
-                [
-                    df_result,
-                    pd.DataFrame(
-                        {
-                            "filename": [filename],
-                            "row": [row["row"]],
-                            "well": [row["well"]],
-                            "signal": [signal],
-                        }
-                    ),
-                ]
-            )
+        y, x = np.ogrid[:height, :width]
+        distance = np.sqrt((x - center_well[0]) ** 2 + (y - center_well[1]) ** 2)
+        mask |= distance <= sensor_size / 2
 
-        bg_mask = ~mask
-        noise = np.std(image[bg_mask])
-        df_result.loc[df_result["filename"] == filename, "noise"] = noise
-        df_result.loc[df_result["filename"] == filename, "SNR"] = (
-            df_result.loc[df_result["filename"] == filename, "signal"] / noise
+        signal = np.mean(image[mask])
+
+        df_result = pd.concat(
+            [
+                df_result,
+                pd.DataFrame(
+                    {
+                        "filename": [filename],
+                        "row": [row["row"]],
+                        "well": [row["well"]],
+                        "signal": [signal],
+                    }
+                ),
+            ]
         )
 
-        if plot_maske:
-            plt.imshow(image)
-            bg_mask = bg_mask.astype(np.float32)
-            plt.imshow(
-                np.dstack((bg_mask, np.zeros_like(bg_mask), np.zeros_like(bg_mask))),
-                alpha=0.3,
-                cmap="Reds",
-            )
-            plt.show()
+    bg_mask = ~mask
+    # noise = np.std(image[bg_mask])
+    noise = np.std(image)
+    df_result.loc[df_result["filename"] == filename, "noise"] = noise
+    df_result.loc[df_result["filename"] == filename, "SNR"] = (
+        df_result.loc[df_result["filename"] == filename, "signal"] / noise
+    )
 
-            print(bg_mask.shape)
+    if plot_maske:
+        plt.imshow(image)
+        bg_mask = bg_mask.astype(np.float32)
+        plt.imshow(
+            np.dstack((bg_mask, np.zeros_like(bg_mask), np.zeros_like(bg_mask))),
+            alpha=0.3,
+            cmap="Reds",
+        )
+        plt.show()
 
-        # print(df_result)
+        print(bg_mask.shape)
 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-    # save metrics
-    df_result.to_csv(output_dir + "/metrics.csv", index=False)
+df_result.to_csv(
+    output_dir + "/metrics" + ("_blue_channel" if blue_channel else "") + ".csv",
+    index=False,
+)
