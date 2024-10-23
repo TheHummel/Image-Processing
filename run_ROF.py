@@ -38,9 +38,9 @@ def run_ROF_denoising(
 
     # LOAD IMAGES
     if is_raw:
-        images = load_dngs_from_folder(input_dir)
+        images, _ = load_dngs_from_folder(input_dir)
     else:
-        images = load_images_from_folder(input_dir)
+        images, _ = load_images_from_folder(input_dir)
 
     center = (center_x, center_y)
 
