@@ -25,6 +25,7 @@ def load_images_from_folder(folder: str, only_format: str = None) -> list:
     folder = normalize_path(folder)
 
     images = []
+    filenames = []
     supported_formats = Image.registered_extensions().keys()
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
         format = "." + (filename.split(".")[-1]).lower()
@@ -36,10 +37,11 @@ def load_images_from_folder(folder: str, only_format: str = None) -> list:
                 print("Error: Image not loaded correctly")
             image = np.array(image)
             images.append(image)
+            filenames.append(filename)
 
     print(f"Loaded {len(images)} images from {folder}")
 
-    return images
+    return images, filenames
 
 
 def load_dngs_from_folder(folder: str) -> list:
@@ -55,15 +57,17 @@ def load_dngs_from_folder(folder: str) -> list:
     folder = normalize_path(folder)
 
     images = []
+    filenames = []
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
         if filename.endswith(".dng"):
             with rawpy.imread(os.path.join(folder, filename)) as raw:
                 image = raw.postprocess()
                 images.append(image)
+                filenames.append(filename)
 
     print(f"Loaded {len(images)} images from {folder}")
 
-    return images
+    return images, filenames
 
 
 def load_dng(path: str) -> np.ndarray:
