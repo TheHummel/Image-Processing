@@ -47,11 +47,11 @@ def run_NREA(
     print(center)
     print(type(center))
     if is_raw:
-        images = load_dngs_from_folder(input_dir)
+        images, filenames = load_dngs_from_folder(input_dir)
     else:
-        images = load_images_from_folder(input_dir)
+        images, filenames = load_images_from_folder(input_dir)
 
-    output_dir = input_dir + "/NREA_epochs"
+    output_dir = input_dir + "/NREA"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
