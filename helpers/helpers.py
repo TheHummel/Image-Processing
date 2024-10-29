@@ -70,6 +70,38 @@ def load_dngs_from_folder(folder: str) -> list:
     return images, filenames
 
 
+def load_dngs_from_folder_16bit(folder: str) -> list:
+    """Loads all dng files from a folder and returns them as a list.
+
+    Args:
+      folder: Path to the folder containing dng files.
+
+    Returns:
+      List of loaded dng files.
+    """
+
+    folder = normalize_path(folder)
+
+    images = []
+    filenames = []
+    for filename in tqdm(os.listdir(folder), desc="Loading images"):
+        if filename.endswith(".dng"):
+            with rawpy.imread(os.path.join(folder, filename)) as raw:
+                image = raw.postprocess(
+                    no_auto_bright=False,
+                    use_auto_wb=False,
+                    use_camera_wb=False,
+                    gamma=(1, 1),
+                    output_bps=16,
+                )
+                images.append(image)
+                filenames.append(filename)
+
+    print(f"Loaded {len(images)} images from {folder}")
+
+    return images, filenames
+
+
 def load_dng(path: str) -> np.ndarray:
     path = normalize_path(path)
     with rawpy.imread(path) as raw:
