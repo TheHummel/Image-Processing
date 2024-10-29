@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from helpers.helpers import (
     normalize_path,
-    load_dngs_from_folder,
+    load_dngs_from_folder_16bit,
     load_images_from_folder,
 )
 
@@ -34,7 +34,7 @@ blue_channel = False
 output_dir = input_dir + "/SNR_metrics"
 
 if is_raw:
-    images, filenames = load_dngs_from_folder(input_dir)
+    images, filenames = load_dngs_from_folder_16bit(input_dir)
 else:
     images, filenames = load_images_from_folder(input_dir)
 
