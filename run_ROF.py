@@ -5,7 +5,7 @@ import click
 
 from denoising.ROF import ROF_denoising
 from metrics.metrics_reliability import metrics_reliability, save_metrics_csv
-from helpers.helpers import load_images_from_folder, load_dngs_from_folder
+from helpers.helpers import load_images_from_folder, load_dngs_from_folder_16bit
 from helpers.CLI_options import (
     input_dir_option,
     is_raw_option,
@@ -38,7 +38,7 @@ def run_ROF_denoising(
 
     # LOAD IMAGES
     if is_raw:
-        images, _ = load_dngs_from_folder(input_dir)
+        images, _ = load_dngs_from_folder_16bit(input_dir)
     else:
         images, _ = load_images_from_folder(input_dir)
 
@@ -53,7 +53,7 @@ def run_ROF_denoising(
         # save image as tiff
         output_path = os.path.join(output_dir, f"denoised_{i + 1}.tiff")
 
-        im = Image.fromarray(denoised_image)
+        im = Image.fromarray(denoised_image, mode="I;16")
         im.save(output_path)
 
     # metrics reliability

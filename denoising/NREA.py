@@ -55,7 +55,7 @@ def NREA(
     if accumulated_image.min() < 0:
         accumulated_image += abs(accumulated_image.min())
 
-    accumulated_image = accumulated_image.astype(np.uint8)
+    accumulated_image = accumulated_image.astype(np.uint16)
 
     # accumulated_image_normalized = (
     #     (accumulated_image - accumulated_image.min())

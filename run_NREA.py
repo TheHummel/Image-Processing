@@ -10,7 +10,7 @@ from denoising.NREA import NREA
 from metrics.SNR_metrics import calc_SNR
 from helpers.helpers import (
     load_images_from_folder,
-    load_dngs_from_folder,
+    load_dngs_from_folder_16bit,
 )
 from helpers.CLI_options import (
     input_dir_option,
@@ -47,7 +47,7 @@ def run_NREA(
     print(center)
     print(type(center))
     if is_raw:
-        images, filenames = load_dngs_from_folder(input_dir)
+        images, filenames = load_dngs_from_folder_16bit(input_dir)
     else:
         images, filenames = load_images_from_folder(input_dir)
 
@@ -67,8 +67,8 @@ def run_NREA(
         )
 
         # save as tiff
-        output_path = os.path.join(output_dir, f"nrea_r{kernel_size}_{i + 1}.tiff")
-        im = Image.fromarray(nrea)
+        output_path = os.path.join(output_dir, filenames[i].replace("dng", "tiff"))
+        im = Image.fromarray(nrea, mode="I;16")
         im.save(output_path)
 
         # calculate SNR
