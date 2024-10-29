@@ -38,9 +38,9 @@ def run_ROF_denoising(
 
     # LOAD IMAGES
     if is_raw:
-        images, _ = load_dngs_from_folder_16bit(input_dir)
+        images, filenames = load_dngs_from_folder_16bit(input_dir)
     else:
-        images, _ = load_images_from_folder(input_dir)
+        images, filenames = load_images_from_folder(input_dir)
 
     center = (center_x, center_y)
 
@@ -51,10 +51,10 @@ def run_ROF_denoising(
         denoised_images.append(denoised_image)
 
         # save image as tiff
-        output_path = os.path.join(output_dir, f"denoised_{i + 1}.tiff")
+        output_path = os.path.join(output_dir, filenames[i])
 
         im = Image.fromarray(denoised_image, mode="I;16")
-        im.save(output_path)
+        im.save(output_path.replace("dng", "tiff"))
 
     # metrics reliability
     mean, std, cv = metrics_reliability(denoised_images, center, radius)
