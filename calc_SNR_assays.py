@@ -1,9 +1,7 @@
 import os
-import rawpy
 import numpy as np
 import pandas as pd
 import re
-from PIL import Image
 
 from scipy.ndimage import rotate
 
@@ -27,7 +25,8 @@ df_data = pd.read_csv(data_file)
 
 df_result = pd.DataFrame(columns=["filename", "row", "well", "signal", "noise", "SNR"])
 
-plot_maske = False
+plot_single_well_mask = False
+plot_mask = False
 
 blue_channel = False
 
@@ -69,9 +68,11 @@ for i, (image, filename) in tqdm(enumerate(zip(images, filenames)), total=len(im
 
         y, x = np.ogrid[:height, :width]
         distance = np.sqrt((x - center_well[0]) ** 2 + (y - center_well[1]) ** 2)
-        mask |= distance <= sensor_size / 2
 
-        signal = np.mean(image[mask])
+        single_well_mask = distance <= sensor_size / 2
+        mask |= single_well_mask
+
+        mean_roi = np.mean(image[single_well_mask])
 
         df_result = pd.concat(
             [
@@ -81,21 +82,36 @@ for i, (image, filename) in tqdm(enumerate(zip(images, filenames)), total=len(im
                         "filename": [filename],
                         "row": [row["row"]],
                         "well": [row["well"]],
-                        "signal": [signal],
+                        "mean_roi": [mean_roi],
                     }
                 ),
             ]
         )
 
+        if plot_single_well_mask:
+            plt.imshow(image)
+            mask_show = single_well_mask.astype(np.float32)
+            plt.imshow(
+                np.dstack(
+                    (mask_show, np.zeros_like(mask_show), np.zeros_like(mask_show))
+                ),
+                cmap="Reds",
+            )
+            plt.show()
+
     bg_mask = ~mask
     # noise = np.std(image[bg_mask])
+    mean_bg = np.mean(image[bg_mask])
     noise = np.std(image)
+    df_result.loc[df_result["filename"] == filename, "signal"] = (
+        df_result.loc[df_result["filename"] == filename, "mean_roi"] - mean_bg
+    )
     df_result.loc[df_result["filename"] == filename, "noise"] = noise
     df_result.loc[df_result["filename"] == filename, "SNR"] = (
         df_result.loc[df_result["filename"] == filename, "signal"] / noise
     )
 
-    if plot_maske:
+    if plot_mask:
         plt.imshow(image)
         bg_mask = bg_mask.astype(np.float32)
         plt.imshow(
