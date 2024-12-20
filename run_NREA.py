@@ -51,7 +51,7 @@ def run_NREA(
     else:
         images, filenames = load_images_from_folder(input_dir)
 
-    output_dir = input_dir + "/NREA"
+    output_dir = input_dir + "/NREA_single_outputs"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -61,14 +61,15 @@ def run_NREA(
     for i in range(n):
         # do NREA with i images
         nrea = NREA(
-            images[: i + 1],
+            [images[i]],
             gaussian_blurring=(kernel == "GB"),
             kernel_radius=kernel_size,
         )
 
         # save as tiff
         output_path = os.path.join(output_dir, filenames[i].replace("dng", "tiff"))
-        im = Image.fromarray(nrea, mode="I;16")
+        # im = Image.fromarray(nrea, mode="I;16")
+        im = Image.fromarray(nrea)
         im.save(output_path)
 
         # calculate SNR
@@ -82,7 +83,7 @@ def run_NREA(
     df_metrics = pd.DataFrame(
         metrics, columns=["SNR", "Signal", "Noise"], index=range(1, n + 1)
     )
-    df_metrics.index.name = "#epochs"
+    df_metrics.index.name = "image"
     df_metrics.to_csv(os.path.join(output_dir, f"metrics_{kernel_size}.csv"))
 
     # plot metrics

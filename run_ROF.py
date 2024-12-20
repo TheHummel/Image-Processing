@@ -46,14 +46,17 @@ def run_ROF_denoising(
 
     denoised_images = []
     for i, image in tqdm(enumerate(images), desc="Denoising images", total=len(images)):
-        denoised_image = ROF_denoising(image, weight=weight)
+        denoised_image = ROF_denoising(image, weight=weight, is_raw=is_raw)
 
         denoised_images.append(denoised_image)
 
         # save image as tiff
         output_path = os.path.join(output_dir, filenames[i])
 
-        im = Image.fromarray(denoised_image, mode="I;16")
+        if is_raw:
+            im = Image.fromarray(denoised_image, mode="I;16")
+        else:
+            im = Image.fromarray(denoised_image)
         im.save(output_path.replace("dng", "tiff"))
 
     # metrics reliability

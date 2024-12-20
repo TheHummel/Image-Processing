@@ -11,7 +11,7 @@ def NREA_transform(
     global done
 
     # CONVERT TO GRAYSCALE
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     if not gaussian_blurring:
         # CIRCULAR AVERAGING
@@ -22,13 +22,13 @@ def NREA_transform(
             y - kernel_center[1]
         ) ** 2 <= kernel_radius**2
 
-        lp_filtered = cv2.filter2D(gray, -1, mask.astype(np.float32) / mask.sum())
+        lp_filtered = cv2.filter2D(image, -1, mask.astype(np.float32) / mask.sum())
 
     else:
         # GAUSSIAN BLURRING
         kernel = (2 * kernel_radius + 1, 2 * kernel_radius + 1)
         sigma = kernel_radius / 3
-        lp_filtered = cv2.GaussianBlur(gray, kernel, sigma)
+        lp_filtered = cv2.GaussianBlur(image, kernel, sigma)
 
     # COMPENSATION
     mean = np.mean(lp_filtered)
@@ -55,13 +55,14 @@ def NREA(
     if accumulated_image.min() < 0:
         accumulated_image += abs(accumulated_image.min())
 
-    accumulated_image = accumulated_image.astype(np.uint16)
+    # accumulated_image = accumulated_image.astype(np.uint16)
+    accumulated_image = accumulated_image.astype(np.uint8)
 
-    # accumulated_image_normalized = (
-    #     (accumulated_image - accumulated_image.min())
-    #     / (accumulated_image.max() - accumulated_image.min())
-    #     * 255
-    # )
-    # accumulated_image_normalized = accumulated_image_normalized.astype(np.uint8)
+    accumulated_image_normalized = (
+        (accumulated_image - accumulated_image.min())
+        / (accumulated_image.max() - accumulated_image.min())
+        * 255
+    )
+    accumulated_image_normalized = accumulated_image_normalized.astype(np.uint8)
 
     return accumulated_image
