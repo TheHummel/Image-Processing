@@ -5,10 +5,10 @@
 *.jpg
 *.jpeg
 
-*.txt
-
 *.pyc
 
 *vscode
 
 archive/
+
+venv/
