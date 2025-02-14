@@ -72,7 +72,7 @@ def run_NREA(
         im.save(output_path)
 
         # calculate SNR
-        snr, signal, noise = calc_SNR(
+        snr, signal, noise, _, _ = calc_SNR(
             nrea, center, radius=radius, show_sample_position=False
         )
 

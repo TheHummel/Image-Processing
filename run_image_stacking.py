@@ -45,10 +45,10 @@ def run_image_stacking(
     # SNR
     center = (center_x, center_y)
 
-    snr_arithmetic, signal_arithmetic, noise_arithmetic = calc_SNR(
+    snr_arithmetic, signal_arithmetic, noise_arithmetic, _, _ = calc_SNR(
         arithmetic_mean, center, radius
     )
-    snr_median, signal_median, noise_median = calc_SNR(median, center, radius)
+    snr_median, signal_median, noise_median, _, _ = calc_SNR(median, center, radius)
 
     # SAVE METRICS TO CSV
     output_path = os.path.join(output_dir, "SNR_metrics.csv")

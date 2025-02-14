@@ -11,7 +11,9 @@ def metrics_reliability(
     metrics = []
 
     for image in images:
-        snr, signal, noise = calc_SNR(image, center, radius, show_sample_position=False)
+        snr, signal, noise, _, _ = calc_SNR(
+            image, center, radius, show_sample_position=False
+        )
         metrics.append([snr, signal, noise])
 
     mean = np.mean(metrics, axis=0)
