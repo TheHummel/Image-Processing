@@ -27,15 +27,44 @@ def load_images_from_folder(folder: str, only_format: str = None) -> list:
     images = []
     filenames = []
     supported_formats = Image.registered_extensions().keys()
+
     for filename in tqdm(os.listdir(folder), desc="Loading images"):
         format = "." + (filename.split(".")[-1]).lower()
         if format in supported_formats and (
-            only_format is None or format == only_format or format[0:] == only_format
+            only_format is None or format == only_format or format[1:] == only_format
         ):
             image = Image.open(os.path.join(folder, filename))
             if image is None:
                 print("Error: Image not loaded correctly")
             image = np.array(image)
+            images.append(image)
+            filenames.append(filename)
+
+    print(f"Loaded {len(images)} images from {folder}")
+
+    return images, filenames
+
+
+def load_images_from_folder_16bit(folder: str, only_format: str = None) -> list:
+    folder = normalize_path(folder)
+    images = []
+    filenames = []
+    supported_formats = Image.registered_extensions().keys()
+
+    for filename in tqdm(os.listdir(folder), desc="Loading images"):
+        format = "." + (filename.split(".")[-1]).lower()
+        if format in supported_formats and (
+            only_format is None or format == only_format or format[1:] == only_format
+        ):
+            image = Image.open(os.path.join(folder, filename))
+
+            if image.mode not in ("I", "I;16"):
+                image = image.convert("I")
+
+            print(f"Image mode: {image.mode}")
+
+            image = np.array(image, dtype=np.uint16)
+
             images.append(image)
             filenames.append(filename)
 
@@ -106,6 +135,20 @@ def load_dng(path: str) -> np.ndarray:
     path = normalize_path(path)
     with rawpy.imread(path) as raw:
         image = raw.postprocess()
+
+    return image
+
+
+def load_dng_16bit(path: str) -> np.ndarray:
+    path = normalize_path(path)
+    with rawpy.imread(path) as raw:
+        image = raw.postprocess(
+            no_auto_bright=False,
+            use_auto_wb=False,
+            use_camera_wb=False,
+            gamma=(1, 1),
+            output_bps=16,
+        ).astype(np.uint16)
 
     return image
 
