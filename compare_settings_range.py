@@ -21,16 +21,25 @@ def extract_iso_expo(filename):
 
 
 def plot_metric_vs_settings(
-    df_images: pd.DataFrame, metric: str, setting: str = "exposure_time", show_plot: bool = False
+    df_images: pd.DataFrame,
+    metric: str,
+    setting: str = "exposure_time",
+    show_plot: bool = False,
 ) -> None:
     if metric not in df_images.columns:
         raise ValueError(f"Metric {metric} not in dataframe")
-    
+
     if setting not in ["exposure_time", "iso"]:
-        raise ValueError(f"Setting {setting} not valid. Choose 'exposure_time' or 'iso'")
+        raise ValueError(
+            f"Setting {setting} not valid. Choose 'exposure_time' or 'iso'"
+        )
 
     setting_label = "exposure_time" if setting == "iso" else "iso"
-    x_label, class_label = ("ISO", "Exposure time (s)") if setting == "iso" else ("Exposure time (s)", "ISO")
+    x_label, class_label = (
+        ("ISO", "Exposure time (s)")
+        if setting == "iso"
+        else ("Exposure time (s)", "ISO")
+    )
 
     unique_setting_label = df_images.sort_values(setting_label)[setting_label].unique()
     colormap = cm.get_cmap("Blues", len(unique_setting_label))
@@ -58,7 +67,7 @@ output_png = input_path + "/" + phone_name + "_metrics_complete2.png"
 
 df_images = pd.DataFrame(columns=["iso", "exposure_time"])
 
-center = (1450, 2030)   # Huawei P20
+center = (1450, 2030)  # Huawei P20
 # center =(1540, 2080)    # Xiaomi
 radius = 80
 
@@ -79,7 +88,9 @@ for filename in tqdm(os.listdir(input_path), desc="Loading images"):
 
     iso, expo = extract_iso_expo(filename)
 
-    snr, signal, noise = calc_SNR(image, center, radius, show_sample_position=False)
+    snr, signal, noise, _, _ = calc_SNR(
+        image, center, radius, show_sample_position=False
+    )
 
     df_images = pd.concat(
         [

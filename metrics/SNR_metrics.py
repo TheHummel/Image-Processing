@@ -23,6 +23,8 @@ def calc_SNR(
     Returns:
     float: The Signal-to-Noise Ratio (SNR) of the image.
     """
+    img = img.astype(np.float64)
+
     # circular region of interest (ROI) for signal
     y, x = np.ogrid[: img.shape[0], : img.shape[1]]
     circle_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius**2
@@ -64,7 +66,7 @@ def calc_SNR(
 
     snr = signal / noise
 
-    return snr, signal, noise  # , std_signal, std_noise
+    return snr, signal, noise, mean_roi, mean_bg
 
 
 def save_metrics(

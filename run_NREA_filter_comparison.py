@@ -130,21 +130,17 @@ def run_NREA_filter_comparison(
     gb_data = []
 
     for kernel_radius in kernel_radii:
-        nrea_ca = NREA(
-            images, gaussian_blurring=False, kernel_radius=kernel_radius
-        )
-        nrea_gb = NREA(
-            images, gaussian_blurring=True, kernel_radius=kernel_radius
-        )
+        nrea_ca = NREA(images, gaussian_blurring=False, kernel_radius=kernel_radius)
+        nrea_gb = NREA(images, gaussian_blurring=True, kernel_radius=kernel_radius)
 
-        snr, signal, noise = calc_SNR(nrea_ca, center, radius)
+        snr, signal, noise, _, _ = calc_SNR(nrea_ca, center, radius)
         output_path = os.path.join(
             output_dir, "SNR_metrics_ca_" + str(kernel_radius) + ".csv"
         )
         save_metrics_csv(snr, signal, noise, output_path)
         ca_data.append((kernel_radius, snr, signal, noise))
 
-        snr, signal, noise = calc_SNR(nrea_gb, center, radius)
+        snr, signal, noise, _, _ = calc_SNR(nrea_gb, center, radius)
         output_path = os.path.join(
             output_dir, "SNR_metrics_gb_" + str(kernel_radius) + ".csv"
         )

@@ -38,7 +38,9 @@ def get_data(
                 img = load_dng(img_path)
                 center = centers[smartphone][app]
                 radius = radii[smartphone]
-                snr, signal, noise = calc_SNR(img, center, radius, show_sample_position=False)
+                snr, signal, noise, _, _ = calc_SNR(
+                    img, center, radius, show_sample_position=False
+                )
 
                 data = pd.concat(
                     [

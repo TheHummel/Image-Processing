@@ -33,7 +33,9 @@ def calc_metrics_reliability(
 
     metrics = []
     for image in tqdm(images, desc="Calculating metrics", total=len(images)):
-        snr, signal, noise = calc_SNR(image, center, radius, show_sample_position=False)
+        snr, signal, noise, _, _ = calc_SNR(
+            image, center, radius, show_sample_position=False
+        )
         metrics.append([snr, signal, noise])
 
     # save metrics to csv
