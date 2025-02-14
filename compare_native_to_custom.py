@@ -6,12 +6,10 @@ from pathlib import Path
 from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import load_dng
+from helpers.helpers import load_dng_16bit
 
 
-def get_data(
-    root_dir: str, centers: dict, radii: dict[str, int]
-) -> pd.DataFrame:
+def get_data(root_dir: str, centers: dict, radii: dict[str, int]) -> pd.DataFrame:
     data = pd.DataFrame(
         columns=["smartphone", "app", "iso", "expo", "snr", "signal", "noise"]
     )
@@ -28,14 +26,17 @@ def get_data(
             app = path_parts[-2]  # custom or native
             iso_expo = path_parts[-1]  # isoXexpoY
 
-
             # Extract X and Y from isoXexpoY (assuming format "isoXexpoY")
             iso = int(iso_expo.split("expo")[0][3:])
             expo = int(iso_expo.split("expo")[1])
 
-            for file in tqdm(files, desc=f"Processing {smartphone} {app} {iso_expo}", total=len(files)):
+            for file in tqdm(
+                files,
+                desc=f"Processing {smartphone} {app} {iso_expo}",
+                total=len(files),
+            ):
                 img_path = os.path.join(root, file)
-                img = load_dng(img_path)
+                img = load_dng_16bit(img_path)
                 center = centers[smartphone][app]
                 radius = radii[smartphone]
                 snr, signal, noise, _, _ = calc_SNR(
@@ -62,17 +63,22 @@ def get_data(
     return data
 
 
-input_dir = ""
+input_dir = (
+    "C:/Users/janni/Desktop/ETH/Bachelor/BT/Messungen/compare_native_to_custom/Xiaomi"
+)
 
 df = get_data(
     input_dir,
-    centers={"Xiaomi": {"native": (1540, 2100), "custom": (2090, 1530)}, "Huawei P20 Pro": {"native": (1450, 1990), "custom": (1980, 1560)}},
+    centers={
+        "Xiaomi": {"native": (1540, 2100), "custom": (2090, 1530)},
+        "Huawei P20 Pro": {"native": (1450, 1990), "custom": (1980, 1560)},
+    },
     radii={"Xiaomi": 80, "Huawei P20 Pro": 80},
 )
 
 print(df)
 
-output_path = input_dir + "/SNR_data.csv"
+output_path = input_dir + "/SNR_data_16bit.csv"
 
 df.to_csv(output_path, index=False)
 print(f"Saved data to {output_path}")
