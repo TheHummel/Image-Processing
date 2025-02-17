@@ -45,3 +45,17 @@ weight_option: click.option() = click.option(
     default=0.9,
     prompt="Weight for ROF denoising",
 )
+
+accumulate_option: click.option() = click.option(
+    "--accumulate",
+    type=bool,
+    default=False,
+    prompt="Accumulate images?",
+)
+
+normalize_option: click.option() = click.option(
+    "--normalize",
+    type=bool,
+    default=False,
+    prompt="Normalize images?",
+)

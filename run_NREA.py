@@ -9,7 +9,7 @@ import click
 from denoising.NREA import NREA
 from metrics.SNR_metrics import calc_SNR
 from helpers.helpers import (
-    load_images_from_folder,
+    load_images_from_folder_16bit,
     load_dngs_from_folder_16bit,
 )
 from helpers.CLI_options import (
@@ -20,6 +20,8 @@ from helpers.CLI_options import (
     radius_option,
     kernel_option,
     kernel_size_option,
+    accumulate_option,
+    normalize_option,
 )
 
 colormap = cm.get_cmap("tab10")
@@ -33,6 +35,8 @@ colormap = cm.get_cmap("tab10")
 @radius_option
 @kernel_option
 @kernel_size_option
+@accumulate_option
+@normalize_option
 def run_NREA(
     input_dir: str,
     is_raw: bool,
@@ -41,17 +45,22 @@ def run_NREA(
     radius: int,
     kernel: str,
     kernel_size: int,
+    accumulate: bool = True,  # true: images 0:i are used, false: only image i is used for i-th iteration
+    normalize: bool = True,
 ):
     # LOAD IMAGES
     center = (center_x, center_y)
-    print(center)
-    print(type(center))
     if is_raw:
         images, filenames = load_dngs_from_folder_16bit(input_dir)
     else:
-        images, filenames = load_images_from_folder(input_dir)
+        images, filenames = load_images_from_folder_16bit(input_dir)
 
-    output_dir = input_dir + "/NREA"
+    output_dir = (
+        input_dir
+        + "/NREA"
+        + f"_{kernel}_{kernel_size}"
+        + ("_accumulated" if accumulate else "_single")
+    )
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -61,14 +70,21 @@ def run_NREA(
     for i in range(n):
         # do NREA with i images
         nrea = NREA(
-            images[: i + 1],
+            images[: i + 1] if accumulate else [images[i]],
             gaussian_blurring=(kernel == "GB"),
             kernel_radius=kernel_size,
         )
 
         # save as tiff
-        output_path = os.path.join(output_dir, filenames[i].replace("dng", "tiff"))
-        im = Image.fromarray(nrea, mode="I;16")
+        output_path = os.path.join(
+            output_dir,
+            filenames[i].split(".")[0] + ("_normalized" if normalize else "") + ".tiff",
+        )
+        nrea_normalized = (
+            (nrea - np.min(nrea)) / (np.max(nrea) - np.min(nrea))
+        ) * 2**16
+        nrea = nrea_normalized if normalize else nrea
+        im = Image.fromarray(nrea.astype(np.uint16), mode="I;16")
         im.save(output_path)
 
         # calculate SNR
@@ -83,14 +99,23 @@ def run_NREA(
         metrics, columns=["SNR", "Signal", "Noise"], index=range(1, n + 1)
     )
     df_metrics.index.name = "#epochs"
-    df_metrics.to_csv(os.path.join(output_dir, f"metrics_{kernel_size}.csv"))
+    df_metrics.to_csv(
+        os.path.join(
+            output_dir,
+            (
+                f"metrics_{kernel}_{kernel_size}"
+                + ("_normalized" if normalize else "")
+                + ".csv"
+            ),
+        )
+    )
 
     # plot metrics
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
     # Plot SNR on the primary y-axis
     ax1.plot(range(1, n + 1), metrics[:, 0], marker="", color=colormap(0), label="SNR")
-    ax1.set_xlabel("#images", fontsize=18)
+    ax1.set_xlabel("#images" if accumulate else "image", fontsize=18)
     ax1.set_ylabel("SNR", fontsize=18)
     ax1.tick_params(axis="y")
 
@@ -112,7 +137,12 @@ def run_NREA(
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc="center left")
 
-    output_path = os.path.join(output_dir, f"metrics_{kernel_size}.png")
+    output_path = os.path.join(
+        output_dir,
+        f"metrics_{kernel}_{kernel_size}"
+        + ("_normalized" if normalize else "")
+        + ".png",
+    )
     plt.savefig(output_path)
 
     # output_path = os.path.join(output_dir, f"metrics_{kernel_radius}.pgf")
