@@ -2,10 +2,11 @@ import os
 from PIL import Image
 from tqdm import tqdm
 import click
+import numpy as np
 
 from denoising.ROF import ROF_denoising
 from metrics.metrics_reliability import metrics_reliability, save_metrics_csv
-from helpers.helpers import load_images_from_folder, load_dngs_from_folder_16bit
+from helpers.helpers import load_images_from_folder_16bit, load_dngs_from_folder_16bit
 from helpers.CLI_options import (
     input_dir_option,
     is_raw_option,
@@ -31,7 +32,7 @@ def run_ROF_denoising(
     radius: int,
     weight: float,
 ):
-    output_dir = input_dir + "/ROF_denoised_" + str(weight).replace(".", "_")
+    output_dir = input_dir + "/ROF_denoised_" + str(weight).replace(".", "_") + "_16bit"
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -40,7 +41,7 @@ def run_ROF_denoising(
     if is_raw:
         images, filenames = load_dngs_from_folder_16bit(input_dir)
     else:
-        images, filenames = load_images_from_folder(input_dir)
+        images, filenames = load_images_from_folder_16bit(input_dir)
 
     center = (center_x, center_y)
 
@@ -53,7 +54,7 @@ def run_ROF_denoising(
         # save image as tiff
         output_path = os.path.join(output_dir, filenames[i])
 
-        im = Image.fromarray(denoised_image, mode="I;16")
+        im = Image.fromarray(denoised_image.astype(np.uint16), mode="I;16")
         im.save(output_path.replace("dng", "tiff"))
 
     # metrics reliability
