@@ -1,13 +1,11 @@
-import os
-import rawpy
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import re
 
 from metrics.SNR_metrics import calc_SNR
+from helpers.helpers import load_dngs_from_folder_16bit
 
 
 def extract_iso_expo(filename):
@@ -60,33 +58,21 @@ def plot_metric_vs_settings(
         plt.show()
 
 
-input_path = ""
-phone_name = "Huawei P20"
-output_pgf = input_path + "/" + phone_name + "_metrics_complete2.pgf"
-output_png = input_path + "/" + phone_name + "_metrics_complete2.png"
+input_path = "/home/jannis/ETH/Bachelor/BT/code/data/Xiaomi/6D"
+phone_name = "Xioami 13 Pro" 
+#output_pgf = input_path + "/" + phone_name + "_metrics_complete2.pgf"
+output_png = input_path + "/" + phone_name + "_metrics_complete_16bit.png"
 
 df_images = pd.DataFrame(columns=["iso", "exposure_time"])
 
-center = (1450, 2030)  # Huawei P20
-# center =(1540, 2080)    # Xiaomi
+#center = (1450, 2030)  # Huawei P20
+center =(1540, 2080)    # Xiaomi
 radius = 80
 
-images = []
-for filename in tqdm(os.listdir(input_path), desc="Loading images"):
-    if filename.endswith(".dng"):
-        with rawpy.imread(os.path.join(input_path, filename)) as raw:
-            image = raw.postprocess()
-            image = np.rot90(image, 3)
-            images.append(image)
-
-    elif filename.endswith(".tiff"):
-        image = plt.imread(os.path.join(input_path, filename))
-        images.append(image)
-
-    else:
-        continue
-
-    iso, expo = extract_iso_expo(filename)
+images, filenames = load_dngs_from_folder_16bit(input_path)
+for i, image in enumerate(images):
+    image = np.rot90(image, 3)
+    iso, expo = extract_iso_expo(filenames[i])
 
     snr, signal, noise, _, _ = calc_SNR(
         image, center, radius, show_sample_position=False
@@ -130,7 +116,7 @@ plt.legend(loc="upper right")
 
 plt.tight_layout()
 
-plt.savefig(output_pgf)
+#plt.savefig(output_pgf)
 plt.savefig(output_png)
 
 plt.show()

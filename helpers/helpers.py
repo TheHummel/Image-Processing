@@ -120,7 +120,7 @@ def load_dngs_from_folder_16bit(folder: str) -> list:
                     use_camera_wb=False,
                     gamma=(1, 1),
                     output_bps=16,
-                )
+                ).astype(np.uint16)
                 images.append(image)
                 filenames.append(filename)
 
