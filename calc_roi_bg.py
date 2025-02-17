@@ -10,7 +10,8 @@ input_dir = ""
 
 images, filenames = load_images_from_folder_16bit(input_dir)
 
-center = CENTERS["Xiaomi 13 Pro"]["cropped4"]
+phone = "Huawei P20"
+center = CENTERS[phone]["cropped2"]
 radius = RADII["Smartphone"]
 
 df = pd.DataFrame(columns=["smartphone", "image", "ROI", "BG"])
@@ -25,7 +26,7 @@ for i, image in tqdm(enumerate(images), total=len(images)):
             df,
             pd.DataFrame(
                 {
-                    "smartphone": ["Xiaomi 13 Pro"],
+                    "smartphone": [phone],
                     "image": [filenames[i]],
                     "ROI": [mean_roi],
                     "BG": [mean_bg],

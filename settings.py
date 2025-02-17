@@ -1,5 +1,8 @@
 CENTERS = {
-    "Huawei P20": (1440, 2040),
+    "Huawei P20": {
+        "original": (1440, 2040),
+        "cropped2": (720, 800),
+    },
     "Xiaomi 13 Pro": {
         "original": (1540, 2070),
         "cropped4": (370, 390),
