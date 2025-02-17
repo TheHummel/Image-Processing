@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import load_images_from_folder, load_dngs_from_folder_16bit
+from helpers.helpers import load_images_from_folder_16bit, load_dngs_from_folder_16bit
 from helpers.CLI_options import (
     input_dir_option,
     is_raw_option,
@@ -26,7 +26,7 @@ def calc_metrics_reliability(
     if is_raw:
         images, _ = load_dngs_from_folder_16bit(input_dir)
     else:
-        images, _ = load_images_from_folder(input_dir)
+        images, _ = load_images_from_folder_16bit(input_dir)
 
     center = (center_x, center_y)
 
