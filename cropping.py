@@ -30,9 +30,8 @@ def crop(input_dir: str, is_raw: bool, crop_factor: int):
         start_y = image.shape[0] // 2 - square_size // 2
         image = image[start_y : start_y + square_size, start_x : start_x + square_size]
         if is_raw:
-            im = Image.fromarray(
-                image[:, :, 2].astype(np.uint16), mode="I;16"
-            )  # only uses blue channel
+            channel_mean = np.mean(image, axis=2)
+            im = Image.fromarray(channel_mean.astype(np.uint16), mode="I;16")
         else:
             im = Image.fromarray(image, mode="I;16")
 
