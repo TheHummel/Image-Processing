@@ -61,8 +61,6 @@ def load_images_from_folder_16bit(folder: str, only_format: str = None) -> list:
             if image.mode not in ("I", "I;16"):
                 image = image.convert("I")
 
-            print(f"Image mode: {image.mode}")
-
             image = np.array(image, dtype=np.uint16)
 
             images.append(image)
