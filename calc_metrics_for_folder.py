@@ -6,27 +6,23 @@ from metrics.SNR_metrics import calc_SNR
 from helpers.helpers import load_images_from_folder_16bit, load_dngs_from_folder_16bit
 from helpers.CLI_options import (
     input_dir_option,
-    is_raw_option,
+    format_option,
     center_x_option,
     center_y_option,
     radius_option,
 )
 
 
-@click.command()
-@input_dir_option
-@is_raw_option
-@center_x_option
-@center_y_option
-@radius_option
-def calc_metrics_reliability(
-    input_dir: str, is_raw: bool, center_x: int, center_y: int, radius: int
+def calc_metrics_for_folder(
+    input_dir: str, format: str, center_x: int, center_y: int, radius: int
 ):
+    """Calculate SNR metrics for all images in a folder and save them to a csv file."""
+
     # LOAD IMAGES
-    if is_raw:
+    if format.lower() == "raw":
         images, _ = load_dngs_from_folder_16bit(input_dir)
     else:
-        images, _ = load_images_from_folder_16bit(input_dir)
+        images, _ = load_images_from_folder_16bit(input_dir, only_format=format)
 
     center = (center_x, center_y)
 
@@ -42,6 +38,18 @@ def calc_metrics_reliability(
 
     df.to_csv(input_dir + "/all_metrics.csv")
 
+    return df
+
+
+@click.command()
+@input_dir_option
+@format_option
+@center_x_option
+@center_y_option
+@radius_option
+def cli_calc_metrics_for_folder():
+    calc_metrics_for_folder()
+
 
 if __name__ == "__main__":
-    calc_metrics_reliability()
+    cli_calc_metrics_for_folder()
