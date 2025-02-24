@@ -9,6 +9,13 @@ is_raw_option: click.option() = click.option(
     "--is_raw", type=bool, default=False, prompt="Are the images in RAW format?"
 )
 
+format_option: click.option() = click.option(
+    "--format",
+    type=click.Choice(["raw", "tiff"], case_sensitive=False),
+    default="raw",
+    prompt="Image format",
+)
+
 center_x_option: click.option() = click.option(
     "--center_x", type=int, prompt="x-cordinate of the LED's center"
 )
@@ -48,14 +55,14 @@ weight_option: click.option() = click.option(
 
 accumulate_option: click.option() = click.option(
     "--accumulate",
-    type=bool,
+    type=click.Choice([True, False]),
     default=False,
     prompt="Accumulate images?",
 )
 
 normalize_option: click.option() = click.option(
     "--normalize",
-    type=bool,
+    type=click.Choice([True, False]),
     default=False,
     prompt="Normalize images?",
 )

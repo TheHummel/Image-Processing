@@ -11,7 +11,12 @@ def NREA_transform(
     global done
 
     # CONVERT TO GRAYSCALE
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if len(image.shape) == 2 or image.shape[2] == 1:
+        gray = image
+    elif image.shape[2] == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        raise ValueError(f"Image has shape {image.shape}")
 
     if not gaussian_blurring:
         # CIRCULAR AVERAGING
