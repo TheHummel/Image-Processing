@@ -11,165 +11,83 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def load_images_from_folder(folder: str, only_format: str = None) -> list:
-    """Loads all images from a folder using PIL converts them to np arrays
-    and returns them as a list.
-
-    Args:
-      folder: Path to the folder containing images.
-
-    Returns:
-      List of loaded images.
+def load_image(file_path: str, bit_depth: int = 8) -> np.ndarray:
     """
+    Load a single image file with the specified bit depth.
+    - bit_depth: 8 or 16
+    """
+    file_path = normalize_path(file_path)
+    file_format = "." + (file_path.split(".")[-1]).lower()
 
-    folder = normalize_path(folder)
+    if file_format == ".dng":
+        try:
+            with rawpy.imread(file_path) as raw:
+                if bit_depth == 16:
+                    return raw.postprocess(
+                        no_auto_bright=False,
+                        use_auto_wb=False,
+                        use_camera_wb=False,
+                        gamma=(1, 1),
+                        output_bps=16,
+                    ).astype(np.uint16)
+                else:
+                    return raw.postprocess()
+        except Exception as e:
+            raise Exception(f"Error loading {file_path}: {e}")
 
-    images = []
-    filenames = []
-    supported_formats = Image.registered_extensions().keys()
+    else:
+        try:
+            image = Image.open(file_path)
 
-    for filename in tqdm(os.listdir(folder), desc="Loading images"):
-        format = "." + (filename.split(".")[-1]).lower()
-        if format in supported_formats and (
-            only_format is None or format == only_format or format[1:] == only_format
-        ):
-            image = Image.open(os.path.join(folder, filename))
-            if image is None:
-                print("Error: Image not loaded correctly")
-            image = np.array(image)
-            images.append(image)
-            filenames.append(filename)
-
-    print(f"Loaded {len(images)} images from {folder}")
-
-    return images, filenames
-
-
-def load_images_from_folder_16bit(folder: str, only_format: str = None) -> list:
-    folder = normalize_path(folder)
-    images = []
-    filenames = []
-    supported_formats = Image.registered_extensions().keys()
-
-    for filename in tqdm(os.listdir(folder), desc="Loading images"):
-        format = "." + (filename.split(".")[-1]).lower()
-        if format in supported_formats and (
-            only_format is None or format == only_format or format[1:] == only_format
-        ):
-            image = Image.open(os.path.join(folder, filename))
-
-            if image.mode not in ("I", "I;16"):
+            if bit_depth == 16 and image.mode not in ("I", "I;16"):
                 image = image.convert("I")
-
-            image = np.array(image, dtype=np.uint16)
-
-            images.append(image)
-            filenames.append(filename)
-
-    print(f"Loaded {len(images)} images from {folder}")
-
-    return images, filenames
+                return np.array(image, dtype=np.uint16)
+            else:
+                return np.array(image)
+        except Exception as e:
+            raise Exception(f"Error loading {file_path}: {e}")
 
 
-def load_dngs_from_folder(folder: str) -> list:
-    """Loads all dng files from a folder and returns them as a list.
-
-    Args:
-      folder: Path to the folder containing dng files.
-
-    Returns:
-      List of loaded dng files.
+def load_images_from_folder(
+    folder: str, file_format: str = None, bit_depth: int = 8
+) -> tuple[list, list]:
     """
-
+    Load images from a folder with specified format and bit depth.
+    - file_format: if file_format is set, only images with that format will be loaded
+    - bit_depth: 8 or 16
+    """
     folder = normalize_path(folder)
-
     images = []
     filenames = []
-    for filename in tqdm(os.listdir(folder), desc="Loading images"):
-        if filename.endswith(".dng"):
-            with rawpy.imread(os.path.join(folder, filename)) as raw:
-                image = raw.postprocess()
-                images.append(image)
-                filenames.append(filename)
 
-    print(f"Loaded {len(images)} images from {folder}")
+    if file_format and not file_format.startswith("."):
+        file_format = "." + file_format.lower()
+
+    supported_formats = set(Image.registered_extensions().keys())
+    supported_formats.add(".dng")
+
+    for filename in tqdm(os.listdir(folder), desc="Loading images"):
+        current_format = "." + (filename.split(".")[-1]).lower()
+
+        if (
+            file_format
+            and current_format != file_format
+            or current_format not in supported_formats
+        ):
+            continue
+
+        file_path = os.path.join(folder, filename)
+        image = load_image(file_path, bit_depth)
+
+        images.append(image)
+        filenames.append(filename)
+
+    if len(images) == 0:
+        print(f"No images of format {file_format} found in {folder}!")
+    else:
+        print(f"Loaded {len(images)} images from {folder}")
 
     return images, filenames
-
-
-def load_dngs_from_folder_16bit(folder: str) -> list:
-    """Loads all dng files from a folder and returns them as a list.
-
-    Args:
-      folder: Path to the folder containing dng files.
-
-    Returns:
-      List of loaded dng files.
-    """
-
-    folder = normalize_path(folder)
-
-    images = []
-    filenames = []
-    for filename in tqdm(os.listdir(folder), desc="Loading images"):
-        if filename.endswith(".dng"):
-            with rawpy.imread(os.path.join(folder, filename)) as raw:
-                image = raw.postprocess(
-                    no_auto_bright=False,
-                    use_auto_wb=False,
-                    use_camera_wb=False,
-                    gamma=(1, 1),
-                    output_bps=16,
-                ).astype(np.uint16)
-                images.append(image)
-                filenames.append(filename)
-
-    print(f"Loaded {len(images)} images from {folder}")
-
-    return images, filenames
-
-
-def load_dng(path: str) -> np.ndarray:
-    path = normalize_path(path)
-    with rawpy.imread(path) as raw:
-        image = raw.postprocess()
-
-    return image
-
-
-def load_dng_16bit(path: str) -> np.ndarray:
-    path = normalize_path(path)
-    with rawpy.imread(path) as raw:
-        image = raw.postprocess(
-            no_auto_bright=False,
-            use_auto_wb=False,
-            use_camera_wb=False,
-            gamma=(1, 1),
-            output_bps=16,
-        ).astype(np.uint16)
-
-    return image
-
-
-def load_tiffs_from_folder(folder: str) -> list:
-    """Loads all tiff files from a folder and returns them as a list.
-
-    Args:
-      folder: Path to the folder containing tiff files.
-
-    Returns:
-      List of loaded tiff files.
-    """
-
-    folder = normalize_path(folder)
-
-    images = []
-    for filename in tqdm(os.listdir(folder), desc="Loading images"):
-        if filename.endswith(".tiff"):
-            image = plt.imread(os.path.join(folder, filename))
-            images.append(image)
-
-    return images
 
 
 def normalize_path(path: str) -> str:

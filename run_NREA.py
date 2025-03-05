@@ -8,10 +8,7 @@ import click
 
 from denoising.NREA import NREA
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import (
-    load_images_from_folder_16bit,
-    load_dngs_from_folder_16bit,
-)
+from helpers.helpers import load_images_from_folder
 from helpers.CLI_options import (
     input_dir_option,
     is_raw_option,
@@ -50,10 +47,10 @@ def run_NREA(
 ):
     # LOAD IMAGES
     center = (center_x, center_y)
-    if is_raw:
-        images, filenames = load_dngs_from_folder_16bit(input_dir)
-    else:
-        images, filenames = load_images_from_folder_16bit(input_dir)
+    file_format = "dng" if is_raw else "tiff"
+    images, filenames = load_images_from_folder(
+        input_dir, file_format=file_format, bit_depth=16
+    )
 
     output_dir = (
         input_dir

@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import load_images_from_folder_16bit, load_dngs_from_folder_16bit
+from helpers.helpers import load_images_from_folder
 from helpers.CLI_options import (
     input_dir_option,
     format_option,
@@ -19,10 +19,7 @@ def calc_metrics_for_folder(
     """Calculate SNR metrics for all images in a folder and save them to a csv file."""
 
     # LOAD IMAGES
-    if format.lower() == "raw":
-        images, _ = load_dngs_from_folder_16bit(input_dir)
-    else:
-        images, _ = load_images_from_folder_16bit(input_dir, only_format=format)
+    images, _ = load_images_from_folder(input_dir, file_format=format, bit_depth=16)
 
     center = (center_x, center_y)
 

@@ -1,14 +1,17 @@
 import pandas as pd
 from tqdm import tqdm
 
-from helpers.helpers import load_images_from_folder_16bit
+from helpers.helpers import load_images_from_folder
 from metrics.SNR_metrics import calc_SNR
 
-from settings import *
+from camera_configs import *
 
 input_dir = ""
 
-images, filenames = load_images_from_folder_16bit(input_dir)
+file_format = "tiff"
+images, filenames = load_images_from_folder(
+    input_dir, file_format=file_format, bit_depth=16
+)
 
 phone = "Huawei P20"
 center = CENTERS[phone]["cropped2"]

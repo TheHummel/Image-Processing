@@ -27,10 +27,10 @@ def calc_metrics_reliability(
         os.makedirs(output_dir)
 
     # LOAD IMAGES
-    if is_raw:
-        images, _ = load_dngs_from_folder(input_dir)
-    else:
-        images, _ = load_images_from_folder(input_dir)
+    file_format = "dng" if is_raw else "tiff"
+    images, _ = load_images_from_folder(
+        input_dir, file_format=file_format, bit_depth=16
+    )
 
     center = (center_x, center_y)
 
