@@ -8,7 +8,7 @@ from PIL import Image
 
 from denoising.NREA import NREA
 from metrics.SNR_metrics import calc_SNR, save_metrics_csv
-from helpers.helpers import load_images_from_folder, load_dngs_from_folder
+from helpers.helpers import load_images_from_folder
 from helpers.CLI_options import (
     input_dir_option,
     is_raw_option,
@@ -116,10 +116,10 @@ def run_NREA_filter_comparison(
         os.makedirs(output_dir)
 
     # Load images
-    if is_raw:
-        images = load_dngs_from_folder(input_dir)
-    else:
-        images = load_images_from_folder(input_dir)
+    file_format = "dng" if is_raw else "tiff"
+    images, _ = load_images_from_folder(
+        input_dir, file_format=file_format, bit_depth=16
+    )
 
     # run NREA for different filters
     kernel_radii = [10, 25, 50, 75, 100, 150, 200]

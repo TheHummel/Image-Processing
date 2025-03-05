@@ -4,7 +4,7 @@ from tqdm import tqdm
 import click
 import numpy as np
 
-from helpers.helpers import load_images_from_folder, load_dngs_from_folder_16bit
+from helpers.helpers import load_images_from_folder
 from helpers.CLI_options import input_dir_option, is_raw_option, crop_factor_option
 
 
@@ -13,10 +13,10 @@ def crop(input_dir: str, is_raw: bool, crop_factor: int) -> list[str]:
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    if is_raw:
-        images, filenames = load_dngs_from_folder_16bit(input_dir)
-    else:
-        images, filenames = load_images_from_folder(input_dir)
+    file_format = "dng" if is_raw else "tiff"
+    images, filenames = load_images_from_folder(
+        input_dir, file_format=file_format, bit_depth=16
+    )
 
     for i, image in tqdm(enumerate(images), desc="Cropping images", total=len(images)):
         if image.dtype != np.uint16:
@@ -49,6 +49,7 @@ def crop(input_dir: str, is_raw: bool, crop_factor: int) -> list[str]:
 @crop_factor_option
 def cli_crop(input_dir: str, is_raw: bool, crop_factor: int):
     crop(input_dir, is_raw, crop_factor)
+
 
 if __name__ == "__main__":
     crop()

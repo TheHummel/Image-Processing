@@ -58,7 +58,9 @@ def full_pipeline(
 
     context = click.get_current_context()
 
-    filenames = crop(input_dir=input_dir, is_raw=(format.lower() == "raw"), crop_factor=crop_factor)
+    filenames = crop(
+        input_dir=input_dir, is_raw=(format.lower() == "dng"), crop_factor=crop_factor
+    )
     cropped_dir = input_dir + "/cropped" + str(crop_factor)
 
     # list of channels
