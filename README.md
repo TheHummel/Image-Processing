@@ -5,9 +5,9 @@ It includes scripts and modules for image denoising, metric evaluation, helper f
 
 ## Denoising
 
-**denoising/** contains modules for Noise Reduction via Ensemble Averaging, ROF denoising and image stacking.
+**denoising/** contains modules for Noise Reduction via Ensemble Averaging, ROF denoising, and image stacking.
 
-**run_NREA.py**, **run_ROF.py** and **run_image_stacking.py** are the corresponding scripts. **run_NREA_filter_comparison.py** runs NREA for circular averaging and gaussian blurring for different kernel sizes.
+**run_NREA.py**, **run_ROF.py** and **run_image_stacking.py** are the corresponding scripts. **run_NREA_filter_comparison.py** runs NREA for circular averaging and Gaussian blurring for different kernel sizes.
 
 **run_full_pipeline.py** runs a complete denoising workflow that:
 
@@ -15,11 +15,11 @@ It includes scripts and modules for image denoising, metric evaluation, helper f
 - For each channel:
   - Runs ROF
   - Runs NREA for both original and ROF-processed images
-- Calculates dignal, noise and signal-to-noise ratio (SNR) for each original and processed image and saves them to a csv file
+- Calculates signal, noise, and signal-to-noise ratio (SNR) for each original and processed image and saves them to a csv file
 
 ## Metrics
 
-**metrics/** contains a module for calculaing the signal, noise and SNR of images.
+**metrics/** contains a module for calculating the signal, noise and SNR of images.
 
 ## OV camera control
 
