@@ -1,20 +1,100 @@
 import os
-import numpy as np
 import pandas as pd
 from pathlib import Path
+import click
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import load_dng_16bit
+from helpers.helpers import load_image
+from helpers.CLI_options import input_dir_option
+from paperplots.helpers.plot import (
+    create_figure,
+    configure_axes,
+    save_plot,
+    CUSTOM_PALETTE,
+)
+
+from camera_configs import CENTERS_NCC, RADII_NCC
 
 
-def get_data(root_dir: str, centers: dict, radii: dict[str, int]) -> pd.DataFrame:
-    data = pd.DataFrame(
-        columns=["smartphone", "app", "iso", "expo", "snr", "signal", "noise"]
+def plot_comparison(
+    df: pd.DataFrame, camera: str, iso: int, expot: int, output_path: str
+) -> None:
+    df = df[(df["smartphone"] == camera) & (df["iso"] == iso) & (df["expo"] == expot)]
+
+    custom_palette = [CUSTOM_PALETTE[1], CUSTOM_PALETTE[3]]
+
+    fig, ax1 = create_figure()
+
+    dodge = 0.5
+    df_long = df.melt(
+        id_vars=["smartphone", "app", "iso", "expo"],
+        value_vars=["SNR", "Signal", "Noise"],
+        var_name="metric",
+        value_name="value",
     )
 
-    for root, dirs, files in os.walk(root_dir):
+    dodge = 0.5
+
+    sns.stripplot(
+        data=df_long,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge,
+        alpha=0.5,
+        ax=ax1,
+        palette=custom_palette,
+        jitter=False,
+    )
+
+    sns.pointplot(
+        data=df_long,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge - 0.1,
+        join=False,
+        ax=ax1,
+        palette=custom_palette,
+        markers=["_"] * df["app"].nunique(),
+        scale=1.5,
+    )
+
+    configure_axes(ax1, xlabel="", ylabel="Value (-)")
+
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(handles[2:], labels[2:], title="App", loc="upper left")
+    # ax1.set_ylim(0, 70)
+
+    save_plot(output_path)
+
+    plt.show()
+
+
+@click.command()
+@input_dir_option
+def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
+    """
+    Calculate SNR metrics for all images in a set of ISO and exposure time settings for both custom and native camera apps.
+
+    Images are expected in the following folder structure:
+    - input_dir: Root folder for a specific smartphone.
+    - custom: Subfolder containing images taken with the custom camera app.
+    - native: Subfolder containing images taken with the native camera app.
+        - Each of these subfolders (custom and native) contains subfolders named in the format isoXexpoY,
+        where X represents the ISO value and Y represents the exposure time.
+        - Each isoXexpoY subfolder contains the images taken at the corresponding ISO and exposure time setting.
+
+    """
+    data = pd.DataFrame(
+        columns=["smartphone", "app", "iso", "expo", "SNR", "Signal", "Noise"]
+    )
+
+    for root, dirs, files in os.walk(input_dir):
         if not files:
             continue
 
@@ -36,9 +116,12 @@ def get_data(root_dir: str, centers: dict, radii: dict[str, int]) -> pd.DataFram
                 total=len(files),
             ):
                 img_path = os.path.join(root, file)
-                img = load_dng_16bit(img_path)
-                center = centers[smartphone][app]
-                radius = radii[smartphone]
+                if not img_path.endswith(".dng"):
+                    continue
+
+                img = load_image(img_path, bit_depth=16)
+                center = CENTERS_NCC[smartphone][app]
+                radius = RADII_NCC[smartphone]
                 snr, signal, noise, _, _ = calc_SNR(
                     img, center, radius, show_sample_position=False
                 )
@@ -52,33 +135,26 @@ def get_data(root_dir: str, centers: dict, radii: dict[str, int]) -> pd.DataFram
                                 "app": [app],
                                 "iso": [iso],
                                 "expo": [expo],
-                                "snr": [snr],
-                                "signal": [signal],
-                                "noise": [noise],
+                                "SNR": [snr],
+                                "Signal": [signal],
+                                "Noise": [noise],
                             }
                         ),
                     ]
                 )
 
-    return data
+    output_path_csv = input_dir + "/SNR_data_16bit.csv"
+
+    data.to_csv(output_path_csv, index=False)
+
+    print(f"Saved csv to {output_path_csv}")
+
+    # plot comparison
+    iso = 1600
+    expot = 15
+    output_path = input_dir + f"custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
+    plot_comparison(data, smartphone, iso, expot, output_path)
 
 
-input_dir = (
-    "C:/Users/janni/Desktop/ETH/Bachelor/BT/Messungen/compare_native_to_custom/Xiaomi"
-)
-
-df = get_data(
-    input_dir,
-    centers={
-        "Xiaomi": {"native": (1540, 2100), "custom": (2090, 1530)},
-        "Huawei P20 Pro": {"native": (1450, 1990), "custom": (1980, 1560)},
-    },
-    radii={"Xiaomi": 80, "Huawei P20 Pro": 80},
-)
-
-print(df)
-
-output_path = input_dir + "/SNR_data_16bit.csv"
-
-df.to_csv(output_path, index=False)
-print(f"Saved data to {output_path}")
+if __name__ == "__main__":
+    compare_native_to_custom()
