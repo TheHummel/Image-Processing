@@ -11,8 +11,8 @@ is_raw_option: click.option() = click.option(
 
 format_option: click.option() = click.option(
     "--format",
-    type=click.Choice(["raw", "tiff"], case_sensitive=False),
-    default="raw",
+    type=click.Choice(["dng", "tiff"], case_sensitive=False),
+    default="dng",
     prompt="Image format",
 )
 
@@ -32,11 +32,11 @@ kernel_option: click.option() = click.option(
     "--kernel",
     type=click.Choice(["CA", "GB"], case_sensitive=False),
     default="CA",
-    prompt="Low-pass filter used (Circular Averaging or Gaussian Blurring)",
+    prompt="NREA: Low-pass filter used (Circular Averaging or Gaussian Blurring)",
 )
 
 kernel_size_option: click.option() = click.option(
-    "--kernel_size", type=int, prompt="Kernel size"
+    "--kernel_size", type=int, prompt="NREA: Kernel size"
 )
 
 crop_factor_option: click.option() = click.option(
@@ -50,19 +50,19 @@ weight_option: click.option() = click.option(
     "--weight",
     type=float,
     default=0.9,
-    prompt="Weight for ROF denoising",
+    prompt="ROF: Weight for ROF denoising",
 )
 
 accumulate_option: click.option() = click.option(
     "--accumulate",
-    type=click.Choice([True, False]),
+    type=bool,
     default=False,
-    prompt="Accumulate images?",
+    prompt="NREA: Accumulate images?",
 )
 
 normalize_option: click.option() = click.option(
     "--normalize",
-    type=click.Choice([True, False]),
+    type=bool,
     default=False,
-    prompt="Normalize images?",
+    prompt="NREA: Normalize images?",
 )
