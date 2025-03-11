@@ -66,3 +66,10 @@ normalize_option: click.option() = click.option(
     default=False,
     prompt="NREA: Normalize images?",
 )
+
+channel_wise_option: click.option() = click.option(
+    "--channel_wise",
+    type=bool,
+    default=False,
+    prompt="Calculate metrics channel-wise?",
+)
