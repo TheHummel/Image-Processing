@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
 from helpers.helpers import load_image
-from helpers.CLI_options import input_dir_option
+from helpers.CLI_options import input_dir_option, channel_wise_option
 from paperplots.helpers.plot import (
     create_figure,
     configure_axes,
@@ -77,7 +77,8 @@ def plot_comparison(
 
 @click.command()
 @input_dir_option
-def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
+@channel_wise_option
+def compare_native_to_custom(input_dir: str, channel_wise: bool) -> pd.DataFrame:
     """
     Calculate SNR metrics for all images in a set of ISO and exposure time settings for both custom and native camera apps.
 
@@ -90,15 +91,33 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
         - Each isoXexpoY subfolder contains the images taken at the corresponding ISO and exposure time setting.
 
     """
-    data = pd.DataFrame(
-        columns=["smartphone", "app", "iso", "expot", "SNR", "Signal", "Noise"]
-    )
+    if channel_wise:
+        channel_data = []
+        for channel in range(3):
+            channel_data.append(
+                pd.DataFrame(
+                    columns=[
+                        "smartphone",
+                        "app",
+                        "iso",
+                        "expot",
+                        "SNR",
+                        "Signal",
+                        "Noise",
+                    ]
+                )
+            )
+    else:
+        data = pd.DataFrame(
+            columns=["smartphone", "app", "iso", "expot", "SNR", "Signal", "Noise"]
+        )
 
     iso_expot_pairs = set()
 
     for root, dirs, files in os.walk(input_dir):
         if not files:
-            continue
+            print(f"No files found in {root}")
+            return
 
         path_parts = Path(root).parts
 
@@ -113,6 +132,9 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
             expot = int(iso_expot.split("expo")[1])
             iso_expot_pairs.add((iso, expot))
 
+            center = CENTERS_NCC[smartphone][app]
+            radius = RADII_NCC[smartphone]
+
             for file in tqdm(
                 files,
                 desc=f"Processing {smartphone} {app} {iso_expot}",
@@ -123,41 +145,88 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
                     continue
 
                 img = load_image(img_path, bit_depth=16)
-                center = CENTERS_NCC[smartphone][app]
-                radius = RADII_NCC[smartphone]
-                snr, signal, noise, _, _ = calc_SNR(
-                    img, center, radius, show_sample_position=False
+
+                if channel_wise:
+                    # iterate over channels
+                    for channel in range(3):
+                        img_channel = img[:, :, channel]
+
+                        snr, signal, noise, _, _ = calc_SNR(
+                            img_channel, center, radius, show_sample_position=False
+                        )
+
+                        channel_data[channel] = pd.concat(
+                            [
+                                channel_data[channel],
+                                pd.DataFrame(
+                                    {
+                                        "smartphone": [smartphone],
+                                        "app": [app],
+                                        "iso": [iso],
+                                        "expot": [expot],
+                                        "SNR": [snr],
+                                        "Signal": [signal],
+                                        "Noise": [noise],
+                                    }
+                                ),
+                            ]
+                        )
+
+                else:
+                    snr, signal, noise, _, _ = calc_SNR(
+                        img, center, radius, show_sample_position=False
+                    )
+
+                    data = pd.concat(
+                        [
+                            data,
+                            pd.DataFrame(
+                                {
+                                    "smartphone": [smartphone],
+                                    "app": [app],
+                                    "iso": [iso],
+                                    "expot": [expot],
+                                    "SNR": [snr],
+                                    "Signal": [signal],
+                                    "Noise": [noise],
+                                }
+                            ),
+                        ]
+                    )
+
+    if (channel_wise and not any(channel_data[0].any())) or (
+        not channel_wise and not any(data.any())
+    ):
+        print("No data collected, check input directory.")
+        return
+
+    if channel_wise:
+        for channel in range(3):
+            output_path_csv = f"{input_dir}/SNR_data_16bit_channel_channel{channel}.csv"
+            channel_data[channel].to_csv(output_path_csv, index=False)
+            print(f"Saved csv to {output_path_csv}")
+
+            # plot comparison
+            for iso, expot in iso_expot_pairs:
+                output_path = (
+                    input_dir
+                    + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}_channel{channel}.pdf"
+                )
+                plot_comparison(
+                    channel_data[channel], smartphone, iso, expot, output_path
                 )
 
-                data = pd.concat(
-                    [
-                        data,
-                        pd.DataFrame(
-                            {
-                                "smartphone": [smartphone],
-                                "app": [app],
-                                "iso": [iso],
-                                "expot": [expot],
-                                "SNR": [snr],
-                                "Signal": [signal],
-                                "Noise": [noise],
-                            }
-                        ),
-                    ]
-                )
+    else:
+        output_path_csv = input_dir + "/SNR_data_16bit.csv"
+        data.to_csv(output_path_csv, index=False)
+        print(f"Saved csv to {output_path_csv}")
 
-    output_path_csv = input_dir + "/SNR_data_16bit.csv"
-
-    data.to_csv(output_path_csv, index=False)
-
-    print(f"Saved csv to {output_path_csv}")
-
-    # plot comparison
-    for iso, expot in iso_expot_pairs:
-        output_path = (
-            input_dir + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
-        )
-        plot_comparison(data, smartphone, iso, expot, output_path)
+        # plot comparison
+        for iso, expot in iso_expot_pairs:
+            output_path = (
+                input_dir + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
+            )
+            plot_comparison(data, smartphone, iso, expot, output_path)
 
 
 if __name__ == "__main__":
