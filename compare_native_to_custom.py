@@ -23,7 +23,7 @@ from camera_configs import CENTERS_NCC, RADII_NCC
 def plot_comparison(
     df: pd.DataFrame, camera: str, iso: int, expot: int, output_path: str
 ) -> None:
-    df = df[(df["smartphone"] == camera) & (df["iso"] == iso) & (df["expo"] == expot)]
+    df = df[(df["smartphone"] == camera) & (df["iso"] == iso) & (df["expot"] == expot)]
 
     custom_palette = [CUSTOM_PALETTE[1], CUSTOM_PALETTE[3]]
 
@@ -31,7 +31,7 @@ def plot_comparison(
 
     dodge = 0.5
     df_long = df.melt(
-        id_vars=["smartphone", "app", "iso", "expo"],
+        id_vars=["smartphone", "app", "iso", "expot"],
         value_vars=["SNR", "Signal", "Noise"],
         var_name="metric",
         value_name="value",
@@ -91,8 +91,10 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
 
     """
     data = pd.DataFrame(
-        columns=["smartphone", "app", "iso", "expo", "SNR", "Signal", "Noise"]
+        columns=["smartphone", "app", "iso", "expot", "SNR", "Signal", "Noise"]
     )
+
+    iso_expot_pairs = set()
 
     for root, dirs, files in os.walk(input_dir):
         if not files:
@@ -104,15 +106,16 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
         if len(path_parts) >= 4:
             smartphone = path_parts[-3]
             app = path_parts[-2]  # custom or native
-            iso_expo = path_parts[-1]  # isoXexpoY
+            iso_expot = path_parts[-1]  # isoXexpoY
 
             # Extract X and Y from isoXexpoY (assuming format "isoXexpoY")
-            iso = int(iso_expo.split("expo")[0][3:])
-            expo = int(iso_expo.split("expo")[1])
+            iso = int(iso_expot.split("expo")[0][3:])
+            expot = int(iso_expot.split("expo")[1])
+            iso_expot_pairs.add((iso, expot))
 
             for file in tqdm(
                 files,
-                desc=f"Processing {smartphone} {app} {iso_expo}",
+                desc=f"Processing {smartphone} {app} {iso_expot}",
                 total=len(files),
             ):
                 img_path = os.path.join(root, file)
@@ -134,7 +137,7 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
                                 "smartphone": [smartphone],
                                 "app": [app],
                                 "iso": [iso],
-                                "expo": [expo],
+                                "expot": [expot],
                                 "SNR": [snr],
                                 "Signal": [signal],
                                 "Noise": [noise],
@@ -150,10 +153,11 @@ def compare_native_to_custom(input_dir: str) -> pd.DataFrame:
     print(f"Saved csv to {output_path_csv}")
 
     # plot comparison
-    iso = 1600
-    expot = 15
-    output_path = input_dir + f"custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
-    plot_comparison(data, smartphone, iso, expot, output_path)
+    for iso, expot in iso_expot_pairs:
+        output_path = (
+            input_dir + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
+        )
+        plot_comparison(data, smartphone, iso, expot, output_path)
 
 
 if __name__ == "__main__":
