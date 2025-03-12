@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
 
 from tqdm import tqdm
 
@@ -75,6 +76,141 @@ def plot_comparison(
     plt.show()
 
 
+def plot_deviations(
+    df: pd.DataFrame, camera: str, iso: int, expot: int, output_path: str
+):
+    df = df[(df["smartphone"] == camera) & (df["iso"] == iso) & (df["expot"] == expot)]
+
+    custom_palette = [CUSTOM_PALETTE[1], CUSTOM_PALETTE[3]]
+
+    fig, ax1 = create_figure()
+    ax2 = ax1.twinx()
+
+    # Create figure
+    custom_palette = [CUSTOM_PALETTE[1], CUSTOM_PALETTE[3]]
+
+    dodge = 0.5
+
+    snr_df = df.copy()
+    signal_noise_df = df.copy()
+
+    # center around minimum means
+    app_means = df.groupby("app")[["SNR", "Signal", "Noise"]].mean()
+    min_means = app_means.min()
+    for metric in ["SNR"]:
+        min_value = min_means[metric]
+        snr_df[metric] -= min_value
+
+    for metric in ["Signal", "Noise"]:
+        min_value = min_means[metric]
+        signal_noise_df[metric] -= min_value
+
+    # melt separately
+    snr_data = pd.melt(
+        snr_df,
+        id_vars=["smartphone", "app", "iso", "expot"],
+        value_vars=["SNR"],
+        var_name="metric",
+        value_name="value",
+    )
+
+    signal_noise_data = pd.melt(
+        signal_noise_df,
+        id_vars=["smartphone", "app", "iso", "expot"],
+        value_vars=["Signal", "Noise"],
+        var_name="metric",
+        value_name="value",
+    )
+
+    # scale Signal/Noise data by 2^16
+    signal_noise_data["value"] = signal_noise_data["value"] / (2**16)
+
+    # plot Signal and Noise
+    sns.stripplot(
+        data=signal_noise_data,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge,
+        alpha=0.5,
+        ax=ax1,
+        palette=custom_palette,
+        jitter=False,
+    )
+
+    sns.pointplot(
+        data=signal_noise_data,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge - 0.1,
+        join=False,
+        ax=ax1,
+        palette=custom_palette,
+        markers=["_"] * df["app"].nunique(),
+        scale=1.5,
+    )
+
+    # plot SNR
+    sns.stripplot(
+        data=snr_data,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge,
+        alpha=0.5,
+        ax=ax2,
+        palette=custom_palette,
+        jitter=False,
+    )
+
+    sns.pointplot(
+        data=snr_data,
+        x="metric",
+        y="value",
+        hue="app",
+        dodge=dodge - 0.1,
+        join=False,
+        ax=ax2,
+        palette=custom_palette,
+        markers=["_"] * df["app"].nunique(),
+        scale=1.5,
+    )
+
+    configure_axes(
+        ax1,
+        xlabel="",
+        ylabel="Signal/Noise (scaled to 2^16)",
+    )
+    ax2.set_ylabel("SNR (raw)")
+
+    configure_axes(
+        ax1,
+        xlabel="",
+        ylabel="Signal/Noise (scaled to 2^16)",
+    )
+    ax2.set_ylabel("SNR (raw)")
+
+    # align zero lines
+    ax1.axhline(y=0, color="gray", linestyle="--", alpha=0.7)
+    line2 = ax2.axhline(y=0, color="gray", linestyle="--", alpha=0.7)
+    line2.set_transform(
+        transforms.blended_transform_factory(ax2.transData, ax1.transAxes)
+    )
+
+    # legend
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(handles[2:], labels[2:], title="App", loc="upper left")
+    ax2.legend().remove()
+
+    plt.tight_layout()
+
+    # Save plot
+    plt.savefig(output_path)
+    plt.show()
+    plt.close()
+
+
 @click.command()
 @input_dir_option
 @channel_wise_option
@@ -116,8 +252,7 @@ def compare_native_to_custom(input_dir: str, channel_wise: bool) -> pd.DataFrame
 
     for root, dirs, files in os.walk(input_dir):
         if not files:
-            print(f"No files found in {root}")
-            return
+            continue
 
         path_parts = Path(root).parts
 
@@ -202,17 +337,36 @@ def compare_native_to_custom(input_dir: str, channel_wise: bool) -> pd.DataFrame
 
     if channel_wise:
         for channel in range(3):
-            output_path_csv = f"{input_dir}/SNR_data_16bit_channel_channel{channel}.csv"
+            output_folder = f"{input_dir}/channel{channel}"
+            os.makedirs(output_folder, exist_ok=True)
+
+            output_path_csv = f"{output_folder}/SNR_data_16bit.csv"
             channel_data[channel].to_csv(output_path_csv, index=False)
             print(f"Saved csv to {output_path_csv}")
 
             # plot comparison
+            plot_comparison_folder = f"{output_folder}/plot_comparison"
+            os.makedirs(plot_comparison_folder, exist_ok=True)
+
             for iso, expot in iso_expot_pairs:
                 output_path = (
-                    input_dir
+                    plot_comparison_folder
                     + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}_channel{channel}.pdf"
                 )
                 plot_comparison(
+                    channel_data[channel], smartphone, iso, expot, output_path
+                )
+
+            # plot deviations
+            plot_deviations_folder = f"{output_folder}/plot_deviations"
+            os.makedirs(plot_deviations_folder, exist_ok=True)
+
+            for iso, expot in iso_expot_pairs:
+                output_path = (
+                    plot_deviations_folder
+                    + f"/deviations_custom_vs_native_{smartphone}_iso{iso}_expot{expot}_channel{channel}.pdf"
+                )
+                plot_deviations(
                     channel_data[channel], smartphone, iso, expot, output_path
                 )
 
