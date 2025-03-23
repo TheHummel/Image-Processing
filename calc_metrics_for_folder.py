@@ -14,7 +14,12 @@ from helpers.CLI_options import (
 
 
 def calc_metrics_for_folder(
-    input_dir: str, format: str, center_x: int, center_y: int, radius: int
+    input_dir: str,
+    format: str,
+    center_x: int,
+    center_y: int,
+    radius: int,
+    offset: int = None,
 ):
     """Calculate SNR metrics for all images in a folder and save them to a csv file."""
 
@@ -26,7 +31,7 @@ def calc_metrics_for_folder(
     metrics = []
     for image in tqdm(images, desc="Calculating metrics", total=len(images)):
         snr, signal, noise, _, _ = calc_SNR(
-            image, center, radius, show_sample_position=False
+            image, center, radius, offset, show_sample_position=False
         )
         metrics.append([snr, signal, noise])
 

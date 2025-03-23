@@ -28,6 +28,10 @@ radius_option: click.option = click.option(
     "--radius", type=int, prompt="Radius of the LED"
 )
 
+offset_option: click.option() = click.option(
+    "--offset", type=int, prompt="Offset for the SNR calculation"
+)
+
 kernel_option: click.option() = click.option(
     "--kernel",
     type=click.Choice(["CA", "GB"], case_sensitive=False),
