@@ -25,12 +25,17 @@ def calc_SNR(
     """
     img = img.astype(np.float64)
 
-    # circular region of interest (ROI) for signal
+    s = np.sqrt(2) * radius
+    half_s = s / 2
     y, x = np.ogrid[: img.shape[0], : img.shape[1]]
-    circle_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius**2
-    circle = img[circle_mask]
+    square_mask = (
+        (x >= center[0] - half_s)
+        & (x <= center[0] + half_s)
+        & (y >= center[1] - half_s)
+        & (y <= center[1] + half_s)
+    )
+    square = img[square_mask]
 
-    # outer ROI = inverse of circle + buffer
     offset_background = radius if offset_background is None else offset_background
     y, x = np.ogrid[: img.shape[0], : img.shape[1]]
     bg_mask = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= (
@@ -40,12 +45,12 @@ def calc_SNR(
     bg = img[bg_mask]
 
     if show_sample_position:
-        circle_mask = circle_mask.astype(np.float32)
+        square_mask = square_mask.astype(np.float32)
         bg_mask = bg_mask.astype(np.float32)
         plt.imshow(img)
         plt.imshow(
             np.dstack(
-                (np.zeros_like(circle_mask), circle_mask, np.zeros_like(circle_mask))
+                (np.zeros_like(square_mask), square_mask, np.zeros_like(square_mask))
             ),
             alpha=0.3,
             cmap="Greens",
@@ -57,13 +62,18 @@ def calc_SNR(
         )
         plt.show()
 
-    mean_roi = np.mean(circle)
+    mean_roi = np.mean(square)
     mean_bg = np.mean(bg)
 
+    # Signal
     signal = mean_roi - mean_bg
 
-    noise = np.std(img)
+    # Noise
+    sigma_S = np.std(square, ddof=0)
+    sigma_B = np.std(bg, ddof=0)
+    noise = np.sqrt((sigma_S**2 + sigma_B**2) / 2)
 
+    # SNR
     snr = signal / noise
 
     return snr, signal, noise, mean_roi, mean_bg
