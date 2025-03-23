@@ -12,12 +12,16 @@ def calc_SNR(
     show_sample_position: bool = False,
 ) -> float:
     """
-    Calculate the Signal-to-Noise Ratio (SNR) of an image.
+    Calculate the Signal-to-Noise Ratio (SNR) of an image where:
+    - Signal is the mean intensity of a circular region of interest (ROI) minus the mean intensity of the background.
+    - Noise is the variance of the ROI and background.
+    - SNR is the ratio of Signal to Noise.
 
     Parameters:
     img (np.ndarray): The input image.
     center ((int, int)): The center of the circular region of interest.
     radius (int): The radius of the circular region of interest.
+    offset_background (int): The offset which is added to the radius to define the background region.
     show_sample_position (bool): Whether to show position from where the signal and noise are sampled.
 
     Returns:
