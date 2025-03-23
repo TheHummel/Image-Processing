@@ -13,8 +13,8 @@ CENTERS = {
 }
 
 RADII = {
-    "Smartphone": 80,
-    "Arducam": 80,
+    "Smartphone": 60,
+    "Arducam": 60,
     "OV": 10,
 }
 
@@ -24,4 +24,4 @@ CENTERS_NCC = {
     # "HP20": {"native": (1450, 1990), "dp20": (1980, 1560)},
     "X13P": {"native": (1540, 2050), "dp20": (2050, 1550)},  # 2nd series of images
 }
-RADII_NCC = {"X13P": 80, "HP20": 80}
+RADII_NCC = {"X13P": 60, "HP20": 60}
