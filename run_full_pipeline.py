@@ -13,6 +13,7 @@ from helpers.CLI_options import (
     center_x_option,
     center_y_option,
     radius_option,
+    offset_option,
     crop_factor_option,
     kernel_option,
     kernel_size_option,
@@ -29,6 +30,7 @@ from helpers.CLI_options import (
 @center_x_option
 @center_y_option
 @radius_option
+@offset_option
 @weight_option
 @kernel_option
 @kernel_size_option
@@ -41,6 +43,7 @@ def full_pipeline(
     center_x: int,
     center_y: int,
     radius: int,
+    offset: int,
     kernel: str,
     kernel_size: int,
     accumulate: bool,
@@ -129,6 +132,7 @@ def full_pipeline(
                 center_x=center_x,
                 center_y=center_y,
                 radius=radius,
+                offset=offset,
             )
             df.columns = [df_col_prefixes[i] + col for col in df.columns]
             df_channel = pd.concat([df_channel, df], axis=1)

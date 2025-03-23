@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from metrics.SNR_metrics import calc_SNR
 from helpers.helpers import load_image
-from helpers.CLI_options import input_dir_option, channel_wise_option
+from helpers.CLI_options import input_dir_option, channel_wise_option, offset_option
 from paperplots.helpers.plot import (
     create_figure,
     configure_axes,
@@ -214,7 +214,10 @@ def plot_deviations(
 @click.command()
 @input_dir_option
 @channel_wise_option
-def compare_native_to_custom(input_dir: str, channel_wise: bool) -> pd.DataFrame:
+@offset_option
+def compare_native_to_custom(
+    input_dir: str, channel_wise: bool, offset: int
+) -> pd.DataFrame:
     """
     Calculate SNR metrics for all images in a set of ISO and exposure time settings for both custom and native camera apps.
 
@@ -287,7 +290,11 @@ def compare_native_to_custom(input_dir: str, channel_wise: bool) -> pd.DataFrame
                         img_channel = img[:, :, channel]
 
                         snr, signal, noise, _, _ = calc_SNR(
-                            img_channel, center, radius, show_sample_position=False
+                            img_channel,
+                            center,
+                            radius,
+                            offset_background=offset,
+                            show_sample_position=False,
                         )
 
                         channel_data[channel] = pd.concat(
