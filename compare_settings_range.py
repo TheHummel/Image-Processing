@@ -3,9 +3,13 @@ import matplotlib.cm as cm
 import pandas as pd
 import numpy as np
 import re
+import click
 
 from metrics.SNR_metrics import calc_SNR
-from helpers.helpers import load_dngs_from_folder_16bit
+from helpers.helpers import load_images_from_folder
+from helpers.CLI_options import input_dir_option, camera_option
+
+from camera_configs import CENTERS, RADII
 
 
 def extract_iso_expo(filename):
@@ -58,65 +62,74 @@ def plot_metric_vs_settings(
         plt.show()
 
 
-input_path = "/home/jannis/ETH/Bachelor/BT/code/data/Xiaomi/6D"
-phone_name = "Xioami 13 Pro" 
-#output_pgf = input_path + "/" + phone_name + "_metrics_complete2.pgf"
-output_png = input_path + "/" + phone_name + "_metrics_complete_16bit.png"
+@click.command()
+@input_dir_option
+@camera_option
+def compare_settings_range(input_dir: str, camera_name) -> None:
+    """
+    Compare the SNR, Signal, and Noise for different ISO and exposure time settings.
+    """
 
-df_images = pd.DataFrame(columns=["iso", "exposure_time"])
+    output_png = input_dir + "/" + camera_name + "_metrics_complete_16bit.png"
 
-#center = (1450, 2030)  # Huawei P20
-center =(1540, 2080)    # Xiaomi
-radius = 80
+    df_images = pd.DataFrame(columns=["iso", "exposure_time"])
 
-images, filenames = load_dngs_from_folder_16bit(input_path)
-for i, image in enumerate(images):
-    image = np.rot90(image, 3)
-    iso, expo = extract_iso_expo(filenames[i])
+    center = CENTERS[camera_name]["original"]
+    radius = RADII["Smartphone"]
 
-    snr, signal, noise, _, _ = calc_SNR(
-        image, center, radius, show_sample_position=False
+    images, filenames = load_images_from_folder(
+        input_dir, file_format=".dng", bit_depth=16
     )
+    for i, image in enumerate(images):
+        image = np.rot90(image, 3)
+        iso, expo = extract_iso_expo(filenames[i])
 
-    df_images = pd.concat(
-        [
-            df_images,
-            pd.DataFrame(
-                {
-                    "iso": [iso],
-                    "exposure_time": [expo],
-                    "SNR": [snr],
-                    "Signal": [signal],
-                    "Noise": [noise],
-                }
-            ),
-        ]
-    )
+        snr, signal, noise, _, _ = calc_SNR(
+            image, center, radius, show_sample_position=False
+        )
 
-fig = plt.figure(figsize=(15, 10))
-fig.suptitle(phone_name, fontsize=24)
+        df_images = pd.concat(
+            [
+                df_images,
+                pd.DataFrame(
+                    {
+                        "iso": [iso],
+                        "exposure_time": [expo],
+                        "SNR": [snr],
+                        "Signal": [signal],
+                        "Noise": [noise],
+                    }
+                ),
+            ]
+        )
 
-setting = "iso"
-plt.subplot(231)
-plot_metric_vs_settings(df_images, "SNR", setting)
-plt.subplot(232)
-plot_metric_vs_settings(df_images, "Signal", setting)
-plt.subplot(233)
-plot_metric_vs_settings(df_images, "Noise", setting)
-plt.legend(loc="upper right")
+    fig = plt.figure(figsize=(15, 10))
+    fig.suptitle(camera_name, fontsize=24)
 
-setting = "exposure_time"
-plt.subplot(234)
-plot_metric_vs_settings(df_images, "SNR", setting)
-plt.subplot(235)
-plot_metric_vs_settings(df_images, "Signal", setting)
-plt.subplot(236)
-plot_metric_vs_settings(df_images, "Noise", setting)
-plt.legend(loc="upper right")
+    setting = "iso"
+    plt.subplot(231)
+    plot_metric_vs_settings(df_images, "SNR", setting)
+    plt.subplot(232)
+    plot_metric_vs_settings(df_images, "Signal", setting)
+    plt.subplot(233)
+    plot_metric_vs_settings(df_images, "Noise", setting)
+    plt.legend(loc="upper right")
 
-plt.tight_layout()
+    setting = "exposure_time"
+    plt.subplot(234)
+    plot_metric_vs_settings(df_images, "SNR", setting)
+    plt.subplot(235)
+    plot_metric_vs_settings(df_images, "Signal", setting)
+    plt.subplot(236)
+    plot_metric_vs_settings(df_images, "Noise", setting)
+    plt.legend(loc="upper right")
 
-#plt.savefig(output_pgf)
-plt.savefig(output_png)
+    plt.tight_layout()
 
-plt.show()
+    plt.savefig(output_png)
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    compare_settings_range()
