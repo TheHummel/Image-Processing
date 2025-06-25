@@ -62,7 +62,10 @@ def full_pipeline(
     context = click.get_current_context()
 
     filenames = crop(
-        input_dir=input_dir, is_raw=(format.lower() == "dng"), crop_factor=crop_factor
+        input_dir=input_dir,
+        is_raw=(format.lower() == "dng"),
+        channel_wise_output=True,
+        crop_factor=crop_factor,
     )
     cropped_dir = input_dir + "/cropped" + str(crop_factor)
 
@@ -76,7 +79,7 @@ def full_pipeline(
     # run pipeline for each channel
     for channel in channels:
         channel_dir = os.path.join(cropped_dir, channel)
-        rof_dir = channel_dir + f"/ROF_denoised_{str(weight).replace(".", "_")}_16bit"
+        rof_dir = channel_dir + f"/ROF_denoised_{str(weight).replace('.', '_')}_16bit"
         nrea_dir_name = (
             "/NREA"
             + f"_{kernel}_{kernel_size}"

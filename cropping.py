@@ -5,10 +5,20 @@ import click
 import numpy as np
 
 from helpers.helpers import load_images_from_folder
-from helpers.CLI_options import input_dir_option, is_raw_option, crop_factor_option
+from helpers.CLI_options import (
+    input_dir_option,
+    is_raw_option,
+    channel_wise_save_option,
+    crop_factor_option,
+)
 
 
-def crop(input_dir: str, is_raw: bool, crop_factor: int) -> list[str]:
+def crop(
+    input_dir: str,
+    is_raw: bool,
+    channel_wise_output: bool = False,
+    crop_factor: int = 1,
+) -> list[str]:
     output_path = input_dir + "/cropped" + str(crop_factor)
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -27,15 +37,19 @@ def crop(input_dir: str, is_raw: bool, crop_factor: int) -> list[str]:
         image = image[start_y : start_y + square_size, start_x : start_x + square_size]
 
         if is_raw:
-            # iterate over channels and save them separately
-            for channel in range(3):
-                os.makedirs(output_path + f"/channel_{channel}", exist_ok=True)
-                im_channel = image[:, :, channel]
-                im = Image.fromarray(im_channel.astype(np.uint16), mode="I;16")
-                im.save(
-                    output_path + f"/channel_{channel}/cropped_{i + 1}.tiff",
-                    format="TIFF",
-                )
+            if channel_wise_output:
+                # iterate over channels and save them separately
+                for channel in range(3):
+                    os.makedirs(output_path + f"/channel_{channel}", exist_ok=True)
+                    im_channel = image[:, :, channel]
+                    im = Image.fromarray(im_channel.astype(np.uint16), mode="I;16")
+                    im.save(
+                        output_path + f"/channel_{channel}/cropped_{i + 1}.tiff",
+                        format="TIFF",
+                    )
+            else:
+                im = Image.fromarray(image, mode="I;16")
+                im.save(output_path + f"/cropped_{i + 1}.tiff", format="TIFF")
         else:
             im = Image.fromarray(image, mode="I;16")
             im.save(output_path + f"/cropped_{i + 1}.tiff", format="TIFF")
@@ -46,10 +60,11 @@ def crop(input_dir: str, is_raw: bool, crop_factor: int) -> list[str]:
 @click.command()
 @input_dir_option
 @is_raw_option
+@channel_wise_save_option
 @crop_factor_option
-def cli_crop(input_dir: str, is_raw: bool, crop_factor: int):
-    crop(input_dir, is_raw, crop_factor)
+def cli_crop(input_dir: str, is_raw: bool, channel_wise_crop: bool, crop_factor: int):
+    crop(input_dir, is_raw, channel_wise_crop, crop_factor)
 
 
 if __name__ == "__main__":
-    crop()
+    cli_crop()

@@ -83,3 +83,10 @@ channel_wise_option: click.option() = click.option(
     default=False,
     prompt="Calculate metrics channel-wise?",
 )
+
+channel_wise_save_option: click.option() = click.option(
+    "--channel_wise_save",
+    type=bool,
+    default=False,
+    prompt="Save images channel-wise?",
+)
