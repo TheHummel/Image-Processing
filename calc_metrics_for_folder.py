@@ -49,8 +49,8 @@ def calc_metrics_for_folder(
 @center_x_option
 @center_y_option
 @radius_option
-def cli_calc_metrics_for_folder():
-    calc_metrics_for_folder()
+def cli_calc_metrics_for_folder(input_dir, format, center_x, center_y, radius):
+    calc_metrics_for_folder(input_dir, format, center_x, center_y, radius)
 
 
 if __name__ == "__main__":
