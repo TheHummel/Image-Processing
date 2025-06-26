@@ -16,7 +16,7 @@ from helpers.CLI_options import (
 def crop(
     input_dir: str,
     is_raw: bool,
-    channel_wise_output: bool = False,
+    channel_wise_save: bool = False,
     crop_factor: int = 1,
 ) -> list[str]:
     output_path = input_dir + "/cropped" + str(crop_factor)
@@ -37,7 +37,7 @@ def crop(
         image = image[start_y : start_y + square_size, start_x : start_x + square_size]
 
         if is_raw:
-            if channel_wise_output:
+            if channel_wise_save:
                 # iterate over channels and save them separately
                 for channel in range(3):
                     os.makedirs(output_path + f"/channel_{channel}", exist_ok=True)
@@ -62,8 +62,8 @@ def crop(
 @is_raw_option
 @channel_wise_save_option
 @crop_factor_option
-def cli_crop(input_dir: str, is_raw: bool, channel_wise_crop: bool, crop_factor: int):
-    crop(input_dir, is_raw, channel_wise_crop, crop_factor)
+def cli_crop(input_dir: str, is_raw: bool, channel_wise_save: bool, crop_factor: int):
+    crop(input_dir, is_raw, channel_wise_save, crop_factor)
 
 
 if __name__ == "__main__":
