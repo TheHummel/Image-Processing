@@ -24,7 +24,7 @@ def load_image(file_path: str, bit_depth: int = 8) -> np.ndarray:
             with rawpy.imread(file_path) as raw:
                 if bit_depth == 16:
                     return raw.postprocess(
-                        no_auto_bright=False,
+                        no_auto_bright=True,
                         use_auto_wb=False,
                         use_camera_wb=False,
                         gamma=(1, 1),
