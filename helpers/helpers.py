@@ -5,6 +5,7 @@ import re
 import csv
 import rawpy
 from PIL import Image
+from natsort import index_natsorted
 
 import matplotlib.pyplot as plt
 
@@ -24,7 +25,7 @@ def load_image(file_path: str, bit_depth: int = 8) -> np.ndarray:
             with rawpy.imread(file_path) as raw:
                 if bit_depth == 16:
                     return raw.postprocess(
-                        no_auto_bright=True,
+                        no_auto_bright=False,
                         use_auto_wb=False,
                         use_camera_wb=False,
                         gamma=(1, 1),
@@ -39,9 +40,14 @@ def load_image(file_path: str, bit_depth: int = 8) -> np.ndarray:
         try:
             image = Image.open(file_path)
 
-            if bit_depth == 16 and image.mode not in ("I", "I;16"):
-                image = image.convert("I")
-                return np.array(image, dtype=np.uint16)
+            if bit_depth == 16:
+                if image.mode == "RGB":
+                    return np.array(image).astype(np.uint16)
+                elif image.mode not in ("I", "I;16"):
+                    image = image.convert("I")
+                    return np.array(image, dtype=np.uint16)
+                else:
+                    return np.array(image, dtype=np.uint16)
             else:
                 return np.array(image)
         except Exception as e:
@@ -81,6 +87,10 @@ def load_images_from_folder(
 
         images.append(image)
         filenames.append(filename)
+
+    sorted_indices = index_natsorted(filenames)
+    images = [images[i] for i in sorted_indices]
+    filenames = [filenames[i] for i in sorted_indices]
 
     if len(images) == 0:
         print(f"No images of format {file_format} found in {folder}!")
