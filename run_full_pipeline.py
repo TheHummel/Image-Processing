@@ -15,6 +15,7 @@ from helpers.CLI_options import (
     radius_option,
     offset_option,
     crop_factor_option,
+    channel_wise_save_option,
     kernel_option,
     kernel_size_option,
     accumulate_option,
@@ -26,6 +27,7 @@ from helpers.CLI_options import (
 @click.command()
 @input_dir_option
 @crop_factor_option
+@channel_wise_save_option
 @format_option
 @center_x_option
 @center_y_option
@@ -39,6 +41,7 @@ from helpers.CLI_options import (
 def full_pipeline(
     input_dir: str,
     crop_factor: int,
+    channel_wise_save: bool,
     format: str,
     center_x: int,
     center_y: int,
@@ -61,24 +64,38 @@ def full_pipeline(
 
     context = click.get_current_context()
 
-    filenames = crop(
-        input_dir=input_dir,
-        is_raw=(format.lower() == "dng"),
-        channel_wise_output=True,
-        crop_factor=crop_factor,
-    )
-    cropped_dir = input_dir + "/cropped" + str(crop_factor)
+    if crop_factor is None or crop_factor == 1:
+        # get filenames from current directory
+        filenames = [
+            f
+            for f in os.listdir(input_dir)
+            if f.endswith(".tiff") or f.endswith(".dng")
+        ]
+        cropped_dir = input_dir
 
-    # list of channels
-    channels = [
-        f
-        for f in os.listdir(cropped_dir)
-        if os.path.isdir(os.path.join(cropped_dir, f))
-    ]
+        channels = [None]
+    else:
+        filenames = crop(
+            input_dir=input_dir,
+            is_raw=(format.lower() == "dng"),
+            channel_wise_save=channel_wise_save,
+            crop_factor=crop_factor,
+        )
+        cropped_dir = input_dir + "/cropped" + str(crop_factor)
+
+        # list of channels
+        if channel_wise_save:
+            channels = [
+                f
+                for f in os.listdir(cropped_dir)
+                if os.path.isdir(os.path.join(cropped_dir, f))
+            ]
+        else:
+            channels = [None]
 
     # run pipeline for each channel
     for channel in channels:
-        channel_dir = os.path.join(cropped_dir, channel)
+        channel_dir = os.path.join(cropped_dir, channel) if channel else cropped_dir
         rof_dir = channel_dir + f"/ROF_denoised_{str(weight).replace('.', '_')}_16bit"
         nrea_dir_name = (
             "/NREA"
@@ -88,7 +105,7 @@ def full_pipeline(
         context.invoke(
             run_ROF_denoising,
             input_dir=channel_dir,
-            is_raw=False,
+            is_raw=True if (format.lower() == "dng" and crop_factor == 1) else False,
             center_x=center_x,
             center_y=center_y,
             radius=radius,
@@ -97,7 +114,7 @@ def full_pipeline(
         context.invoke(
             run_NREA,
             input_dir=channel_dir,
-            is_raw=False,
+            is_raw=True if (format.lower() == "dng" and crop_factor == 1) else False,
             center_x=center_x,
             center_y=center_y,
             radius=radius,
