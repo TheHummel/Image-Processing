@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import click
+import cv2
 
 from denoising.NREA import NREA
 from metrics.SNR_metrics import calc_SNR
@@ -83,6 +84,14 @@ def run_NREA(
         nrea = nrea_normalized if normalize else nrea
         im = Image.fromarray(nrea.astype(np.uint16), mode="I;16")
         im.save(output_path)
+        cv2.imwrite(
+            output_path,
+            nrea.astype(np.uint16),
+            [
+                cv2.IMWRITE_TIFF_COMPRESSION,
+                cv2.IMWRITE_TIFF_COMPRESSION_NONE,
+            ],
+        )
 
         # calculate SNR
         snr, signal, noise, _, _ = calc_SNR(

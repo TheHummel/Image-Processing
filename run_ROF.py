@@ -3,6 +3,7 @@ from PIL import Image
 from tqdm import tqdm
 import click
 import numpy as np
+import cv2
 
 from denoising.ROF import ROF_denoising
 from metrics.metrics_reliability import metrics_reliability, save_metrics_csv
@@ -54,8 +55,11 @@ def run_ROF_denoising(
         # save image as tiff
         output_path = os.path.join(output_dir, filenames[i])
 
-        im = Image.fromarray(denoised_image.astype(np.uint16), mode="I;16")
-        im.save(output_path.replace("dng", "tiff"))
+        cv2.imwrite(
+            output_path.replace("dng", "tiff"),
+            denoised_image,
+            [cv2.IMWRITE_TIFF_COMPRESSION, cv2.IMWRITE_TIFF_COMPRESSION_NONE],
+        )
 
     # metrics reliability
     mean, std, cv = metrics_reliability(denoised_images, center, radius)

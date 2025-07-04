@@ -3,6 +3,7 @@ from PIL import Image
 from tqdm import tqdm
 import click
 import numpy as np
+import cv2
 
 from helpers.helpers import load_images_from_folder
 from helpers.CLI_options import (
@@ -42,14 +43,23 @@ def crop(
                 for channel in range(3):
                     os.makedirs(output_path + f"/channel_{channel}", exist_ok=True)
                     im_channel = image[:, :, channel]
-                    im = Image.fromarray(im_channel.astype(np.uint16), mode="I;16")
-                    im.save(
+                    cv2.imwrite(
                         output_path + f"/channel_{channel}/cropped_{i + 1}.tiff",
-                        format="TIFF",
+                        im_channel,
+                        [
+                            cv2.IMWRITE_TIFF_COMPRESSION,
+                            cv2.IMWRITE_TIFF_COMPRESSION_NONE,
+                        ],
                     )
             else:
-                im = Image.fromarray(image, mode="I;16")
-                im.save(output_path + f"/cropped_{i + 1}.tiff", format="TIFF")
+                if len(image.shape) == 3:
+                    image = np.mean(image, axis=2).astype(np.uint16)
+
+                cv2.imwrite(
+                    output_path + f"/cropped_{i + 1}.tiff",
+                    image,
+                    [cv2.IMWRITE_TIFF_COMPRESSION, cv2.IMWRITE_TIFF_COMPRESSION_NONE],
+                )
         else:
             im = Image.fromarray(image, mode="I;16")
             im.save(output_path + f"/cropped_{i + 1}.tiff", format="TIFF")
