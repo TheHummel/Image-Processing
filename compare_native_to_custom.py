@@ -32,7 +32,7 @@ def plot_comparison(
 
     dodge = 0.5
     df_long = df.melt(
-        id_vars=["smartphone", "app", "iso", "expot"],
+        id_vars=["filename", "smartphone", "app", "iso", "expot"],
         value_vars=["SNR", "Signal", "Noise"],
         var_name="metric",
         value_name="value",
@@ -108,7 +108,7 @@ def plot_deviations(
     # melt separately
     snr_data = pd.melt(
         snr_df,
-        id_vars=["smartphone", "app", "iso", "expot"],
+        id_vars=["filename", "smartphone", "app", "iso", "expot"],
         value_vars=["SNR"],
         var_name="metric",
         value_name="value",
@@ -116,7 +116,7 @@ def plot_deviations(
 
     signal_noise_data = pd.melt(
         signal_noise_df,
-        id_vars=["smartphone", "app", "iso", "expot"],
+        id_vars=["filename", "smartphone", "app", "iso", "expot"],
         value_vars=["Signal", "Noise"],
         var_name="metric",
         value_name="value",
@@ -236,6 +236,7 @@ def compare_native_to_custom(
             channel_data.append(
                 pd.DataFrame(
                     columns=[
+                        "filename",
                         "smartphone",
                         "app",
                         "iso",
@@ -248,13 +249,22 @@ def compare_native_to_custom(
             )
     else:
         data = pd.DataFrame(
-            columns=["smartphone", "app", "iso", "expot", "SNR", "Signal", "Noise"]
+            columns=[
+                "filename",
+                "smartphone",
+                "app",
+                "iso",
+                "expot",
+                "SNR",
+                "Signal",
+                "Noise",
+            ]
         )
 
     iso_expot_pairs = set()
 
     for root, dirs, files in os.walk(input_dir):
-        if not files:
+        if not files or len(files) == 1 and files[0].startswith("."):
             continue
 
         path_parts = Path(root).parts
@@ -302,6 +312,7 @@ def compare_native_to_custom(
                                 channel_data[channel],
                                 pd.DataFrame(
                                     {
+                                        "filename": [file],
                                         "smartphone": [smartphone],
                                         "app": [app],
                                         "iso": [iso],
@@ -324,6 +335,7 @@ def compare_native_to_custom(
                             data,
                             pd.DataFrame(
                                 {
+                                    "filename": [file],
                                     "smartphone": [smartphone],
                                     "app": [app],
                                     "iso": [iso],
@@ -347,7 +359,7 @@ def compare_native_to_custom(
             output_folder = f"{input_dir}/channel{channel}"
             os.makedirs(output_folder, exist_ok=True)
 
-            output_path_csv = f"{output_folder}/SNR_data_16bit.csv"
+            output_path_csv = f"{output_folder}/metrics.csv"
             channel_data[channel].to_csv(output_path_csv, index=False)
             print(f"Saved csv to {output_path_csv}")
 
@@ -378,16 +390,31 @@ def compare_native_to_custom(
                 )
 
     else:
-        output_path_csv = input_dir + "/SNR_data_16bit.csv"
+        output_path_csv = input_dir + "/metrics.csv"
         data.to_csv(output_path_csv, index=False)
         print(f"Saved csv to {output_path_csv}")
 
         # plot comparison
+        plot_comparison_folder = f"{input_dir}/plot_comparison"
+        os.makedirs(plot_comparison_folder, exist_ok=True)
+
         for iso, expot in iso_expot_pairs:
             output_path = (
-                input_dir + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
+                plot_comparison_folder
+                + f"/custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
             )
             plot_comparison(data, smartphone, iso, expot, output_path)
+
+        # plot deviations
+        plot_deviations_folder = f"{input_dir}/plot_deviations"
+        os.makedirs(plot_deviations_folder, exist_ok=True)
+
+        for iso, expot in iso_expot_pairs:
+            output_path = (
+                plot_deviations_folder
+                + f"/deviations_custom_vs_native_{smartphone}_iso{iso}_expot{expot}.pdf"
+            )
+            plot_deviations(data, smartphone, iso, expot, output_path)
 
 
 if __name__ == "__main__":
