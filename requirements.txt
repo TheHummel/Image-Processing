@@ -26,3 +26,4 @@ tifffile==2024.12.12
 tqdm==4.67.1
 tzdata==2024.2
 natsort==8.4.0
+exifread==3.3.1
