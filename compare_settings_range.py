@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import pandas as pd
@@ -129,6 +130,10 @@ def compare_settings_range(input_dir: str, camera_name) -> None:
     plt.savefig(output_png)
 
     plt.show()
+
+    # save the df to a CSV file
+    output_csv = os.path.join(input_dir, f"metrics_{camera_name.replace(' ', '_')}.csv")
+    df_images.to_csv(output_csv, index=False)
 
 
 if __name__ == "__main__":
