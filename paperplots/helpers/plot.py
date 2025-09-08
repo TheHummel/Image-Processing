@@ -17,10 +17,12 @@ line_width = 1
 
 # figure dimensions
 FIG_WIDTH_MM = 95
-FIG_HEIGHT_MM = 55
+FIG_HEIGHT_MM = 60
 
 
-def create_figure(subplot_layout=(1, 1), height_ratios=None):
+def create_figure(
+    subplot_layout=(1, 1), height_ratios=None, FIG_WIDTH_MM=95, FIG_HEIGHT_MM=60
+):
     """
     Create a matplotlib figure with specified dimensions and layout.
 
@@ -34,7 +36,7 @@ def create_figure(subplot_layout=(1, 1), height_ratios=None):
     fig, axes = plt.subplots(
         *subplot_layout,
         # figsize=(FIG_WIDTH_MM / 25.4, FIG_HEIGHT_MM / (25.4)),
-        figsize=(FIG_WIDTH_MM / 10, FIG_HEIGHT_MM / (10)),
+        figsize=(FIG_WIDTH_MM / 25.4, FIG_HEIGHT_MM / (25.4)),
         gridspec_kw={"height_ratios": height_ratios}
     )
     return fig, axes
