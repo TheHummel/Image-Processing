@@ -17,6 +17,8 @@ It includes scripts and modules for image denoising, metric evaluation, helper f
   - Runs NREA for both original and ROF-processed images
 - Calculates signal, noise, and signal-to-noise ratio (SNR) for each original and processed image and saves them to a csv file
 
+**run_pipeline_multiple_stacks.py** runs the full pipeline on multiple series folders in a given input directory. Each series folder should contain the raw images for one series.
+
 ## Metrics
 
 **metrics/** contains a module for calculating the signal, noise and SNR of images.
