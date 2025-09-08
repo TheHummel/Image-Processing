@@ -30,13 +30,15 @@ def calc_metrics_for_folder(
 
     metrics = []
     for image in tqdm(images, desc="Calculating metrics", total=len(images)):
-        snr, signal, noise, _, _ = calc_SNR(
+        snr, signal, noise, mean_roi, mean_bg = calc_SNR(
             image, center, radius, offset, show_sample_position=False
         )
-        metrics.append([snr, signal, noise])
+        metrics.append([snr, signal, noise, mean_roi, mean_bg])
 
     # save metrics to csv
-    df = pd.DataFrame(metrics, columns=["SNR", "Signal", "Noise"])
+    df = pd.DataFrame(
+        metrics, columns=["SNR", "Signal", "Noise", "Mean ROI", "Mean BG"]
+    )
 
     df.to_csv(input_dir + "/all_metrics.csv")
 

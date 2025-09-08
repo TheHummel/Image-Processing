@@ -299,7 +299,7 @@ def compare_native_to_custom(
                     for channel in range(3):
                         img_channel = img[:, :, channel]
 
-                        snr, signal, noise, _, _ = calc_SNR(
+                        snr, signal, noise, mean_roi, mean_bg = calc_SNR(
                             img_channel,
                             center,
                             radius,
@@ -320,13 +320,15 @@ def compare_native_to_custom(
                                         "SNR": [snr],
                                         "Signal": [signal],
                                         "Noise": [noise],
+                                        "Mean ROI": [mean_roi],
+                                        "Mean BG": [mean_bg],
                                     }
                                 ),
                             ]
                         )
 
                 else:
-                    snr, signal, noise, _, _ = calc_SNR(
+                    snr, signal, noise, mean_roi, mean_bg = calc_SNR(
                         img, center, radius, show_sample_position=False
                     )
 
@@ -343,6 +345,8 @@ def compare_native_to_custom(
                                     "SNR": [snr],
                                     "Signal": [signal],
                                     "Noise": [noise],
+                                    "Mean ROI": [mean_roi],
+                                    "Mean BG": [mean_bg],
                                 }
                             ),
                         ]
