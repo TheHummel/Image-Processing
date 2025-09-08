@@ -4,6 +4,7 @@
 *.bmp
 *.jpg
 *.jpeg
+*.pdf
 
 *.pyc
 
