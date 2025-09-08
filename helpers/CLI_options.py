@@ -8,7 +8,7 @@ input_dir_option: click.option() = click.option(
 camera_option: click.option() = click.option(
     "--camera_name",
     type=str,
-    prompt="Camera name (e.g. Xioami 13 Pro, Huawei P20, Arducam, OV)",
+    prompt="Camera name (e.g. Xiaomi 13 Pro, Huawei P20, Arducam, OV)",
 )
 
 is_raw_option: click.option() = click.option(
